@@ -3,7 +3,6 @@ name: Build OddsLab APK
 on:
   push:
     branches: [ main ]
-    paths: [ 'android/**' ]
   workflow_dispatch:
 
 jobs:
@@ -21,12 +20,11 @@ jobs:
       - name: Process icon
         run: |
           sudo apt-get install -y imagemagick
-          cd android
-          convert ../icon.png -resize 48x48   app/src/main/res/mipmap-mdpi/ic_launcher.png
-          convert ../icon.png -resize 72x72   app/src/main/res/mipmap-hdpi/ic_launcher.png
-          convert ../icon.png -resize 96x96   app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          convert ../icon.png -resize 144x144 app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          convert ../icon.png -resize 192x192 app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          convert icon.png -resize 48x48   android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert icon.png -resize 72x72   android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert icon.png -resize 96x96   android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       - name: Decode keystore
         run: |
@@ -35,7 +33,7 @@ jobs:
       - name: Build APK
         working-directory: android
         env:
-          KEYSTORE_PATH: app/keystore.jks
+          KEYSTORE_PATH: keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
