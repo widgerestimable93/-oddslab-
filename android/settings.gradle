@@ -1,0 +1,2 @@
+rootProject.name = "OddsLabAnalytics"
+include ':app'

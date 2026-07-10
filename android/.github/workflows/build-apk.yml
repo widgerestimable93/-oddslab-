@@ -1,0 +1,60 @@
+name: Build OddsLab APK
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'android/**' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Process icon
+        run: |
+          sudo apt-get install -y imagemagick
+          cd android
+          convert ../icon.png -resize 48x48   app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert ../icon.png -resize 72x72   app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert ../icon.png -resize 96x96   app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert ../icon.png -resize 144x144 app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert ../icon.png -resize 192x192 app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+
+      - name: Build APK
+        working-directory: android
+        env:
+          KEYSTORE_PATH: app/keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: OddsLab-Analytics.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: OddsLab Analytics v1.0.${{ github.run_number }}
+          files: android/app/build/outputs/apk/release/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
