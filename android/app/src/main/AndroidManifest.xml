@@ -4,26 +4,26 @@
     <application
         android:label="OddsLab Analytics"
         android:icon="@mipmap/ic_launcher"
-        android:theme="@style/AppTheme"
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity
-            android:name="android.support.customtabs.trusted.LauncherActivity"
+            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
             android:exported="true">
-            <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL"
+            <meta-data
+                android:name="android.support.customtabs.trusted.DEFAULT_URL"
                 android:value="https://widgerestimable93.github.io/-oddslab-/" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https"
-                      android:host="widgerestimable93.github.io"
-                      android:pathPrefix="/-oddslab-/"/>
-            </intent-filter>
         </activity>
+        <service
+            android:name="com.google.androidbrowserhelper.trusted.DelegationService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </service>
     </application>
 </manifest>
