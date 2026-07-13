@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="android:Theme.Black.NoTitleBar">
+    <color name="colorPrimary">#040608</color>
+    <style name="AppTheme" parent="android:Theme.Black.NoTitleBar.Fullscreen">
         <item name="android:windowBackground">#040608</item>
         <item name="android:statusBarColor">#040608</item>
         <item name="android:navigationBarColor">#040608</item>
+        <item name="android:windowFullscreen">true</item>
     </style>
 </resources>
