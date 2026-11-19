@@ -686,9 +686,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
 
   <div class="topbar">
     <div class="tb-brand">OddsLab <em>INTELLIGENCE</em></div>
-    <div class="tb-version">v6.0 ML</div>
+    <div class="tb-version">v6.1</div>
     <div class="live-pill"><div class="ld"></div>LIVE</div>
-    <div class="model-pill">🤖 XGBoost + Poisson</div>
+    <div class="model-pill">🤖 Poisson · cotes marché</div>
     <div class="lg-tabs" id="lgTabs"></div>
     <div class="tb-right">
       <button class="rfbtn" onclick="reloadData()"><span id="rfIco">↻</span> <span id="rfTxt">Actualiser</span></button>
@@ -700,24 +700,20 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     <!-- DASHBOARD -->
     <div id="dashboardPage" class="page on">
       <div class="model-info-bar">
-        <div class="mib-item"><span>Modèle</span><span class="mib-val p">XGBoost v3.2 + Ensemble</span></div>
+        <div class="mib-item"><span>Modèle</span><span class="mib-val p">Poisson calibré aux cotes</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Validation Accuracy</span><span class="mib-val g">73.4%</span></div>
+        <div class="mib-item"><span>Source</span><span class="mib-val g">The Odds API</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>ROC AUC</span><span class="mib-val c">0.812</span></div>
+        <div class="mib-item"><span>Compétitions</span><span class="mib-val c">25 ligues</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Brier Score</span><span class="mib-val g">0.187</span></div>
+        <div class="mib-item"><span>Fenêtre</span><span class="mib-val o">48 h</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>F1 Score</span><span class="mib-val c">0.741</span></div>
+        <div class="mib-item"><span>Actualisation</span><span class="mib-val c">cache 15 min</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Dataset</span><span class="mib-val o">847K matchs</span></div>
-        <div class="mib-sep"></div>
-        <div class="mib-item"><span>Features</span><span class="mib-val c">142</span></div>
-        <div class="mib-sep"></div>
-        <div class="mib-item"><span>Latence ML</span><span class="mib-val g">48ms</span></div>
+        <div class="mib-item"><span>Score</span><span class="mib-val p">estimation probabiliste</span></div>
       </div>
       <div class="kpi-row">
-        <div class="kpi c"><div class="kpi-ico">⚽</div><div class="kpi-lbl">Matchs Analysés</div><div class="kpi-val" id="k-m">–</div><div class="kpi-sub">via ML Pipeline</div></div>
+        <div class="kpi c"><div class="kpi-ico">⚽</div><div class="kpi-lbl">Matchs Analysés</div><div class="kpi-val" id="k-m">–</div><div class="kpi-sub">modèle Poisson calibré aux cotes</div></div>
         <div class="kpi p"><div class="kpi-ico">🎯</div><div class="kpi-lbl">Prédictions Actives</div><div class="kpi-val" id="k-p">–</div><div class="kpi-sub">Confiance ≥60%</div></div>
         <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Opportunités xEV</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">Expected Value</div></div>
         <div class="kpi o"><div class="kpi-ico">🛡</div><div class="kpi-lbl">Forecasts Stables</div><div class="kpi-val" id="k-s">–</div><div class="kpi-sub">Stabilité ≥75%</div></div>
@@ -777,7 +773,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
         <div class="lab-grid">
           <div class="lab-card" onclick="showLabModule('dataset')"><span class="lab-badge new">LIVE</span><div class="lab-ico">🗄️</div><div class="lab-name">Dataset Explorer</div><div class="lab-desc">847K matchs · 142 features<br>Visualisation & audit qualité</div></div>
           <div class="lab-card" onclick="showLabModule('features')"><span class="lab-badge exp">ML</span><div class="lab-ico">🔍</div><div class="lab-name">Feature Explorer</div><div class="lab-desc">Importance SHAP · Corrélation<br>Distribution & outliers</div></div>
-          <div class="lab-card" onclick="showLabModule('models')"><span class="lab-badge new">7</span><div class="lab-ico">🤖</div><div class="lab-name">Model Comparison</div><div class="lab-desc">XGBoost · LightGBM · Neural Net<br>Random Forest · Ensemble</div></div>
+          <div class="lab-card" onclick="showLabModule('models')"><span class="lab-badge new">7</span><div class="lab-ico">🤖</div><div class="lab-name">Model Comparison</div><div class="lab-desc">Poisson · Cotes marché · Probabilités marché<br>Score exact · Poisson</div></div>
           <div class="lab-card" onclick="showLabModule('simulation')"><span class="lab-badge exp">MC</span><div class="lab-ico">🎲</div><div class="lab-name">Simulation Center</div><div class="lab-desc">Monte Carlo · 10K itérations<br>Distribution de résultats</div></div>
           <div class="lab-card" onclick="showLabModule('backtest')"><span class="lab-badge beta">BETA</span><div class="lab-ico">📅</div><div class="lab-name">Historical Backtesting</div><div class="lab-desc">5 saisons · Performance tracker<br>ROI & calibration historique</div></div>
           <div class="lab-card" onclick="showLabModule('xai')"><span class="lab-badge exp">SHAP</span><div class="lab-ico">🧠</div><div class="lab-name">Explainable AI</div><div class="lab-desc">SHAP values · Feature attribution<br>Decision path visualization</div></div>
@@ -841,7 +837,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
             <li class="yes">Prédictions Poisson de base</li>
             <li class="no">Prediction Engine complet</li>
             <li class="no">Monte Carlo Simulation</li>
-            <li class="no">SHAP Explainability</li>
+            <li class="no">Explication des probabilités</li>
             <li class="no">AI Research Lab</li>
           </ul>
           <button class="plan-btn curr">Plan actuel</button>
@@ -1143,7 +1139,7 @@ function mkSbRow(item){
 
 function renderPredPage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Prédictions calibrées via Poisson + XGBoost + Ensemble.",["Matrice Poisson 6×6","Top 10 scores probables","xG Timeline","Confidence intervals","Feature importance SHAP"]);$("predCont").style.display="none";return;}
+  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Prédictions calibrées via Poisson + XGBoost + Ensemble.",["Matrice Poisson 6×6","Top 10 scores probables","xG Timeline","Confidence intervals","Influence des probabilités de marché"]);$("predCont").style.display="none";return;}
   $("predGate").innerHTML="";$("predCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]);
