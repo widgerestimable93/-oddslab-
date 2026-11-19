@@ -672,7 +672,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="ni" onclick="nav('safebets')" data-p="safebets"><span class="ni-ico">🛡</span><span class="nl">AI Forecasts</span><span class="ni-bdg o" id="sb-sb">0</span></div>
       <div class="ng" style="margin-top:6px">Research</div>
       <div class="ni" onclick="nav('lab')" data-p="lab"><span class="ni-ico">🔬</span><span class="nl">Outils Poisson</span><span class="ni-bdg p">NEW</span></div>
-      <div class="ni" onclick="nav('elo')" data-p="elo"><span class="ni-ico">📈</span><span class="nl">Elo Ratings</span></div>
+      <div class="ni" onclick="nav('elo')" data-p="elo"><span class="ni-ico">📈</span><span class="nl">Cotes réelles</span></div>
       <div class="ni" onclick="nav('leagues')" data-p="leagues"><span class="ni-ico">🏆</span><span class="nl">Classements</span></div>
       <div class="ng" style="margin-top:6px">Outils</div>
       <div class="ni" onclick="nav('ticket')" data-p="ticket"><span class="ni-ico">📋</span><span class="nl">Decision Portfolio</span></div>
@@ -793,7 +793,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
 
     <!-- LEAGUES -->
     <div id="leaguesPage" class="page">
-      <div class="sec"><div class="sh"><div class="st">🏆 Classements & Statistiques</div></div>
+      <div class="sec"><div class="sh"><div class="st">🏆 Matchs et cotes par ligue</div></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px" id="standings-body"></div>
       </div>
     </div>
@@ -1338,55 +1338,37 @@ function runSimulation(){
 }
 function poissonRand(lambda){var L=Math.exp(-lambda),p=1,k=0;do{k++;p*=Math.random();}while(p>L);return k-1;}
 
-function renderElo(){
-  var LT={"Premier League":["Man City","Arsenal","Liverpool","Aston Villa","Tottenham","Chelsea","Newcastle","Man United"],
-    "La Liga":["Real Madrid","Barcelona","Atletico Madrid","Athletic Bilbao","Real Betis","Real Sociedad","Girona","Valencia"],
-    "Serie A":["Inter","Juventus","Milan","Napoli","Atalanta","Roma","Lazio","Fiorentina"],
-    "Bundesliga":["Bayer Leverkusen","Bayern München","Stuttgart","RB Leipzig","Borussia Dortmund","Eintracht Frankfurt","Hoffenheim","Wolfsburg"],
-    "Ligue 1":["PSG","Monaco","Lens","Brest","Lille","Nice","Rennes","Reims"]};
-  var base=[1850,1810,1790,1760,1730,1710,1680,1650];
-  $("elo-body").innerHTML=Object.keys(LT).map(function(lg){
-    return'<div><div style="font-family:var(--fh);font-size:15px;letter-spacing:.3px;margin-bottom:8px">'+lg+'</div>'
-      +'<div style="background:var(--card);border:1px solid var(--edge);border-radius:var(--r16);overflow:hidden">'
-      +LT[lg].map(function(team,i){
-        var elo=base[i]+(hs2(team)%50-25),ch=(hs2(team)%30)-10;
-        return'<div class="elo-row"><div class="elo-rank'+(i<3?" top":"")+'">'+(i+1)+'</div>'
-          +'<div class="elo-team">'+team+'</div>'
-          +'<div class="elo-rating">'+elo+'</div>'
-          +'<div class="elo-change '+(ch>=0?"up":"dn")+'">'+(ch>=0?"+":"")+ch+'</div>'
-          +'<div class="elo-bar-wrap"><div class="elo-bar"><div class="elo-fill" style="width:'+Math.round((elo-1600)/300*100)+'%"></div></div></div>'
-          +'</div>';
-      }).join("")+'</div></div>';
-  }).join("");
+function marketProbabilities(m){
+  var o=m.odds||{},h=o.h>1?1/o.h:0,d=o.d>1?1/o.d:0,a=o.a>1?1/o.a:0,sum=h+d+a;
+  return sum?{h:h/sum,d:d/sum,a:a/sum}:{h:0,d:0,a:0};
 }
-
-function renderLeagues(){
-  var LIDS=["Premier League","La Liga","Serie A","Bundesliga","Ligue 1","UCL"];
-  var TEAMS=[
-    ["Arsenal","Man City","Liverpool","Aston Villa","Tottenham","Chelsea","Newcastle","Man United"],
-    ["Real Madrid","Girona","Barcelona","Atletico Madrid","Athletic Bilbao","Real Betis","Real Sociedad","Las Palmas"],
-    ["Inter","Juventus","Milan","Atalanta","Roma","Bologna","Lazio","Fiorentina"],
-    ["Bayer Leverkusen","Bayern München","Stuttgart","RB Leipzig","Borussia Dortmund","Eintracht","Hoffenheim","Freiburg"],
-    ["PSG","Monaco","Lens","Brest","Lille","Nice","Rennes","Reims"],
-    ["Real Madrid","Manchester City","Bayern München","Arsenal","Barcelona","Atletico","Dortmund","PSG"]
-  ];
-  $("standings-body").innerHTML=LIDS.map(function(lg,li){
-    var teams=TEAMS[li],pts=58;
-    return'<div><div style="font-family:var(--fh);font-size:15px;letter-spacing:.3px;margin-bottom:8px">'+lg+'</div>'
-      +'<div class="stnd-wrap"><table class="stnd-tbl"><thead><tr><th>#</th><th>Équipe</th><th>MJ</th><th>V</th><th>N</th><th>D</th><th>Pts</th><th>Elo</th></tr></thead><tbody>'
-      +teams.map(function(t,i){
-        var p=Math.max(0,Math.round(pts-i*6)),pl=20+i,w=Math.round(p/3),d=Math.max(0,Math.round((p-w*3)/1)),l=Math.max(0,pl-w-d);
-        return'<tr><td><div class="stnd-rank'+(i<3?" top":"")+'">'+(i+1)+'</div></td>'
-          +'<td><div class="stnd-team">'+t+'</div></td>'
-          +'<td style="font-family:var(--fd);font-size:11px;color:var(--t3)">'+pl+'</td>'
-          +'<td style="font-family:var(--fd);font-size:11px;color:var(--g)">'+Math.max(0,w)+'</td>'
-          +'<td style="font-family:var(--fd);font-size:11px;color:var(--o)">'+d+'</td>'
-          +'<td style="font-family:var(--fd);font-size:11px;color:var(--r)">'+l+'</td>'
-          +'<td><div class="stnd-pts">'+p+'</div></td>'
-          +'<td style="font-family:var(--fd);font-size:10px;color:var(--gold)">'+(1650+i*(-30)+hs2(t)%50)+'</td></tr>';
-      }).join("")+'</tbody></table></div></div>';
-  }).join("");
+function renderMarketMatches(targetId){
+  var data=S.data||{},all=data.allMatches||[],groups={};
+  all.forEach(function(m){var key=m.league||"Autre";if(!groups[key])groups[key]={flag:m.flag||"⚽",matches:[]};groups[key].matches.push(m);});
+  var names=Object.keys(groups).sort(function(a,b){
+    var ia=LEAGUES.findIndex(function(l){return l.name===a;});
+    var ib=LEAGUES.findIndex(function(l){return l.name===b;});
+    return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b);
+  });
+  if(!names.length){$(targetId).innerHTML=empty("📭","Aucun match avec cotes dans les prochaines 48 h.");return;}
+  var updated=data.ts?new Date(data.ts).toLocaleString("fr-FR"):"—";
+  $(targetId).innerHTML='<div style="grid-column:1/-1" class="rc info"><div class="rc-ico">📡</div><div class="rc-title">Données réelles · The Odds API</div><div class="rc-body">'+all.length+' matchs avec cotes disponibles · mise à jour '+updated+' · La page affiche des matchs et probabilités de marché, pas un classement officiel ni un Elo.</div></div>'
+    +names.map(function(name){
+      var list=groups[name].matches.slice().sort(function(a,b){return new Date(a.time)-new Date(b.time);});
+      return'<div class="sec" style="min-width:0"><div class="sh"><div class="st">'+groups[name].flag+' '+name+' <span class="sc">'+list.length+'</span></div></div>'
+        +'<div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Début</th><th>Rencontre</th><th>Cotes 1X2</th><th>Score le plus probable</th><th>P(score)</th><th>Sources</th></tr></thead><tbody>'
+        +list.map(function(m){
+          var date=m.time?new Date(m.time):null,time=date&&!isNaN(date.getTime())?date.toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+          var p=marketProbabilities(m),pred=m.prediction||{},o=m.odds||{};
+          return'<tr><td>'+time+'</td><td><b>'+(m.home||"—")+'</b><br>vs '+(m.away||"—")+'</td>'
+            +'<td>'+[o.h||"—",o.d||"—",o.a||"—"].join(" / ")+'</td>'
+            +'<td><b style="color:var(--p)">'+(pred.home!==undefined?pred.home+"–"+pred.away:"—")+'</b></td>'
+            +'<td>'+(pred.pct||0)+'%</td><td>'+(m.bookCount||0)+'</td></tr>';
+        }).join("")+'</tbody></table></div></div>';
+    }).join("");
 }
+function renderElo(){renderMarketMatches("elo-body");}
+function renderLeagues(){renderMarketMatches("standings-body");}
 
 function renderTicket(){
   var d=S.data;if(!d)return;
