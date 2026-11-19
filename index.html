@@ -1194,176 +1194,28 @@ function renderAnalysis(matchId){
   var d=S.data;if(!d)return;
   var m=(d.allMatches||[]).find(function(x){return x.id===matchId;});
   if(!m){$("analysisBody").innerHTML='<div class="empty"><div class="empty-ico">🔍</div>Match introuvable</div>';return;}
-  var ai=m.aiScore||{},v=m.value||{},probs=m.probs||{},xg=m.xg||{},pred=m.prediction||{};
-  var aiCls=(ai.label||"").indexOf("SAFE")>-1?"safe":(ai.label||"").indexOf("GOOD")>-1?"good":"risky";
-  var hasD=m.odds&&m.odds.d>0;
+  var xg=m.xg||{},pred=m.prediction||{},probs=m.probs||{},odds=m.odds||{};
   var dt=m.time?new Date(m.time):null;
   var tStr=dt?dt.toLocaleString("fr-FR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
-  var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  var sd=hs2((m.home||"")+(m.away||""));
-  var h2h={homeWins:1+(sd%4),draws:1+((sd*7)%3),awayWins:1+((sd*3)%3)};
-  var hForm=[0,1,2,3,4].map(function(_,i){var s=hs2(m.home||"")*(i+1);return s%4===0?"W":s%4===1?"W":s%4===2?"D":"L";});
-  var aForm=[0,1,2,3,4].map(function(_,i){var s=hs2(m.away||"")*(i+1);return s%4===0?"W":s%4===1?"W":s%4===2?"D":"L";});
-  var eloH=1480+hs2(m.home||"")%200,eloA=1450+hs2(m.away||"")%200;
-  var mcWin=Math.round((probs.h||0.45)*100),mcDraw=Math.round((probs.d||0.25)*100),mcAway=100-mcWin-mcDraw;
-  var features=[
-    {label:"Avantage domicile",pct:22,color:"var(--c)"},
-    {label:"Tactical Matchup",pct:16,color:"var(--p)"},
-    {label:"Forme récente (5m)",pct:18,color:"var(--g)"},
-    {label:"xG Différentiel",pct:14,color:"var(--c2)"},
-    {label:"Blessures / Absences",pct:10,color:"var(--o)"},
-    {label:"Jours de repos",pct:8,color:"var(--gold)"},
-    {label:"Cotes marché",pct:7,color:"var(--t2)"},
-    {label:"Météo / Terrain",pct:5,color:"var(--t3)"}
-  ];
-  var top10=[];
-  if(m.poisson){
-    for(var hi=0;hi<m.poisson.length;hi++)for(var ai2=0;ai2<m.poisson[hi].length;ai2++)top10.push({h:hi,a:ai2,p:m.poisson[hi][ai2]});
-    top10.sort(function(a,b){return b.p-a.p;});top10=top10.slice(0,10);
-  }else{
-    top10=[{h:1,a:0,p:.12},{h:1,a:1,p:.10},{h:2,a:1,p:.09},{h:0,a:0,p:.08},{h:2,a:0,p:.08},{h:0,a:1,p:.07},{h:3,a:1,p:.06},{h:1,a:2,p:.06},{h:2,a:2,p:.05},{h:3,a:0,p:.04}];
-  }
-  var maxTop=top10[0]?top10[0].p:1;
-  var uncLow=Math.max(0,(pred.pct||10)-8),uncHigh=Math.min(100,(pred.pct||10)+8);
-
   $("analysisBody").innerHTML=
     '<div class="a-hero">'
     +'<div class="ah-bar"></div>'
-    +'<div class="ah-meta">'
-    +'<div class="ah-lg-pill"><div class="lc-dot" style="background:'+(m.leagueColor||"#3a4a5e")+';width:7px;height:7px;border-radius:50%"></div>'+(m.flag||"")+" "+(m.league||"")+'</div>'
-    +'<div class="ah-time-badge">'+tStr+'</div>'
-    +'<span class="bk-n">'+(m.bookCount||0)+' sources</span>'
-    +'<div style="margin-left:auto;display:flex;gap:5px">'
-    +'<span class="chip '+(aiCls==="safe"?"high-conf":aiCls==="good"?"med-conf":"low-conf")+'">'+ai.score+'/100 ML</span>'
-    +(v.detected?'<span class="chip vb">xEV +'+v.pct+'%</span>':"")
-    +(m.trap&&m.trap.detected?'<span class="chip trap">⚠ RISK</span>':"")
-    +'</div></div>'
-    +'<div class="ah-matchup">'
-    +'<div class="ah-team home"><div class="ah-tn">'+(m.home||"")+'</div><div class="ah-odd">'+(m.odds&&m.odds.h||"–")+'</div>'
-    +'<div class="ah-form">'+hForm.map(function(r){return'<div class="fb '+r+'">'+r+'</div>';}).join("")+'</div>'
-    +'<div style="font-family:var(--fd);font-size:9px;color:var(--t3);margin-top:4px">Elo: '+eloH+'</div></div>'
-    +'<div class="ah-c">'+(hasD?'<div class="ah-draw-l">Nul</div><div class="ah-draw-v">'+m.odds.d+'</div>':'<div class="ah-vs">VS</div>')+'</div>'
-    +'<div class="ah-team away"><div class="ah-tn">'+(m.away||"")+'</div><div class="ah-odd">'+(m.odds&&m.odds.a||"–")+'</div>'
-    +'<div class="ah-form" style="justify-content:flex-end">'+aForm.map(function(r){return'<div class="fb '+r+'">'+r+'</div>';}).join("")+'</div>'
-    +'<div style="font-family:var(--fd);font-size:9px;color:var(--t3);margin-top:4px;text-align:right">Elo: '+eloA+'</div></div>'
-    +'</div>'
-    +'<div class="ah-prediction">'
-    +'<div style="text-align:center"><div class="ah-pred-lbl">Score Prédit — Poisson Engine</div>'
-    +'<div class="ah-pred-score">'+(pred.home!==undefined?pred.home+" – "+pred.away:"N/A")+'</div></div>'
-    +'<div class="ah-pred-meta"><div class="ah-pred-lbl">Probabilité</div><div class="ah-pred-pct">'+(pred.pct||0)+'%</div>'
-    +'<div class="ah-pred-conf '+(ai.confidence||"LOW")+'">'+(ai.confidence||"–")+' CONFIDENCE</div></div>'
-    +'<div style="text-align:center"><div class="ah-pred-lbl">ML Score</div><div class="ah-pred-pct" style="color:var(--c)">'+(ai.score||0)+'/100</div></div>'
-    +'<div style="text-align:center"><div class="ah-pred-lbl">Monte Carlo Win%</div><div class="ah-pred-pct" style="color:var(--g)">'+mcWin+'%</div></div>'
-    +'</div>'
-    +'<div class="ai-strip">'
-    +'<div class="ai-big '+aiCls+'">'+(ai.score||0)+'</div>'
-    +'<div class="ai-right">'
-    +'<div class="ai-label">'+(ai.label||"")+' — AI Prediction Engine</div>'
-    +'<div class="ai-formula">Score = Form×0.25 + xG×0.30 + MarketProb×0.25 + H2H×0.10 + Consistency×0.10 | XGBoost + Poisson Ensemble</div>'
-    +'<div class="ai-pills">'
-    +'<span class="ai-pill">xG dom: <b>'+((xg.home||0).toFixed(2))+'</b></span>'
-    +'<span class="ai-pill">xG ext: <b>'+((xg.away||0).toFixed(2))+'</b></span>'
-    +'<span class="ai-pill">xA dom: <b>'+((xg.home||0)*0.7).toFixed(2)+'</b></span>'
-    +'<span class="ai-pill">Over2.5: <b>'+Math.round((probs.over25||0)*100)+'%</b></span>'
-    +'<span class="ai-pill">BTTS: <b>'+Math.round((probs.btts||0)*100)+'%</b></span>'
-    +'<span class="ai-pill">Brier: <b>0.'+(187+hs2(m.id||"")%30)+'</b></span>'
-    +'<span class="ai-pill">Log Loss: <b>0.'+(42+hs2(m.id||"")%15)+'</b></span>'
-    +'</div></div></div>'
-    +'</div>'
-
-    // Uncertainty
-    +'<div class="unc-band" style="margin-bottom:14px">'
-    +'<div class="unc-row"><span>Intervalle de confiance 90%</span><span style="color:var(--c)">'+uncLow+'% — '+uncHigh+'%</span></div>'
-    +'<div class="unc-bar"><div class="unc-needle" style="left:'+Math.round((pred.pct||10)/100*100)+'%"></div></div>'
-    +'<div class="unc-row" style="margin-top:4px"><span style="color:var(--t4);font-size:8px">Stabilité: <span style="color:var(--g)">'+(75+hs2(m.id||"")%20)+'%</span> · Calibration: <span style="color:var(--c)">'+(0.78+((hs2(m.id||"")%15)/100)).toFixed(2)+'</span></span></div>'
-    +'</div>'
-
-    // Feature Importance
-    +'<div class="explain-panel">'
-    +'<div class="explain-title">🧠 Feature Importance — SHAP Explainability</div>'
-    +'<div class="explain-sub">Contribution de chaque facteur | Méthode: SHAP TreeExplainer (XGBoost)</div>'
-    +features.map(function(f){
-      return '<div class="fi-row"><span style="font-family:var(--fd);font-size:9px;color:var(--t2);width:150px;flex-shrink:0">'+f.label+'</span>'
-        +'<div style="flex:1;height:5px;background:var(--edge);border-radius:3px;overflow:hidden"><div style="width:'+f.pct/22*100+'%;height:100%;border-radius:3px;background:'+f.color+'"></div></div>'
-        +'<span style="font-family:var(--fd);font-size:9px;font-weight:700;width:32px;text-align:right;color:'+f.color+'">+'+f.pct+'%</span></div>';
-    }).join("")
-    +'</div>'
-
-    // Metrics
-    +'<div style="font-family:var(--fh);font-size:16px;letter-spacing:.3px;margin:14px 0 10px">📊 Model Performance Metrics</div>'
-    +'<div class="metrics-grid">'
-    +'<div class="metric-card"><div class="metric-lbl">Validation Accuracy</div><div class="metric-val g">73.4%</div><div class="metric-sub">Test set 2024/25</div></div>'
-    +'<div class="metric-card"><div class="metric-lbl">ROC AUC</div><div class="metric-val c">0.812</div><div class="metric-sub">XGBoost Ensemble</div></div>'
-    +'<div class="metric-card"><div class="metric-lbl">Brier Score</div><div class="metric-val g">0.187</div><div class="metric-sub">↓ Lower is better</div></div>'
-    +'<div class="metric-card"><div class="metric-lbl">F1 Score</div><div class="metric-val c">0.741</div><div class="metric-sub">Precision: 76.2%</div></div>'
-    +'<div class="metric-card"><div class="metric-lbl">Recall</div><div class="metric-val o">68.9%</div><div class="metric-sub">True positive rate</div></div>'
-    +'<div class="metric-card"><div class="metric-lbl">Log Loss</div><div class="metric-val c">0.421</div><div class="metric-sub">Calibration quality</div></div>'
-    +'<div class="metric-card"><div class="metric-lbl">Features Used</div><div class="metric-val c">142</div><div class="metric-sub">après feature selection</div></div>'
-    +'<div class="metric-card"><div class="metric-lbl">Dataset</div><div class="metric-val g">847K</div><div class="metric-sub">matchs entraînement</div></div>'
-    +'</div>'
-
-    // xG
-    +'<div style="font-family:var(--fh);font-size:16px;letter-spacing:.3px;margin:14px 0 10px">⚡ Expected Goals (xG) Model</div>'
-    +'<div class="xg-section">'
-    +'<div class="xg-card home-xg"><div class="xg-title">'+(m.home||"")+'</div>'
-    +'<div class="xg-val">'+((xg.home||0).toFixed(2))+'</div>'
-    +'<div class="xg-bar-track"><div class="xg-bar-fill" style="width:'+Math.min(100,(xg.home||0)/4*100)+'%"></div></div>'
-    +'<div class="xg-stats">'
-    +'<span class="xg-stat">Estimation Poisson issue des cotes</span>'
-    +'</div></div>'
-    +'<div class="xg-card away-xg"><div class="xg-title">'+(m.away||"")+'</div>'
-    +'<div class="xg-val">'+((xg.away||0).toFixed(2))+'</div>'
-    +'<div class="xg-bar-track"><div class="xg-bar-fill" style="width:'+Math.min(100,(xg.away||0)/4*100)+'%"></div></div>'
-    +'<div class="xg-stats">'
-    +'<span class="xg-stat">Estimation Poisson issue des cotes</span>'
-    +'</div></div>'
-    +'</div>'
-
-    // Probs
-    +'<div class="prob-trio">'
-    +'<div class="prob-item"><div class="prob-lbl">Victoire Dom.</div><div class="prob-pct" style="color:var(--c)">'+Math.round((probs.h||0)*100)+'%</div><div class="prob-trk"><div class="prob-fill" style="width:'+Math.round((probs.h||0)*100)+'%;background:var(--c)"></div></div></div>'
-    +(hasD?'<div class="prob-item"><div class="prob-lbl">Match Nul</div><div class="prob-pct" style="color:var(--o)">'+Math.round((probs.d||0)*100)+'%</div><div class="prob-trk"><div class="prob-fill" style="width:'+Math.round((probs.d||0)*100)+'%;background:var(--o)"></div></div></div>':"")
-    +'<div class="prob-item"><div class="prob-lbl">Victoire Ext.</div><div class="prob-pct" style="color:var(--p2)">'+Math.round((probs.a||0)*100)+'%</div><div class="prob-trk"><div class="prob-fill" style="width:'+Math.round((probs.a||0)*100)+'%;background:var(--p2)"></div></div></div>'
-    +'</div>'
-
-    // Top 10
-    +'<div style="font-family:var(--fh);font-size:16px;letter-spacing:.3px;margin:14px 0 10px">🎲 Top 10 Scores les Plus Probables</div>'
-    +'<div class="top10-grid">'
-    +top10.map(function(s){
-      var pct=Math.round((s.p||0)*100);
-      return '<div class="t10-cell"><div class="t10-score">'+s.h+'-'+s.a+'</div><div class="t10-pct">'+pct+'%</div><div class="t10-bar"><div class="t10-fill" style="width:'+Math.round((s.p||0)/maxTop*100)+'%"></div></div></div>';
-    }).join("")
-    +'</div>'
-
-    // Poisson Matrix
-    +(isPrem&&m.poisson?renderPoissonMatrix(m):mkGate("Matrice Poisson","Accédez à la distribution complète 6×6.",["Probabilité 0-0 à 5-5","Score le plus probable","Poisson Distribution"]))
-
-    // H2H
-    +'<div style="font-family:var(--fh);font-size:16px;letter-spacing:.3px;margin:14px 0 10px">⚡ Head-to-Head Analysis</div>'
-    +'<div class="rg" style="grid-template-columns:1fr">'
-    +'<div class="rc info"><div class="rc-ico">⚡</div><div class="rc-title">Confrontations directes</div>'
-    +'<div class="rc-body">'+(m.home||"")+" <b>"+h2h.homeWins+"V</b> — <b>"+h2h.draws+"N</b> — <b>"+h2h.awayWins+"V</b> "+(m.away||"")+'</div>'
-    +'<div class="h2h-bar"><div class="h2h-hw" style="flex:'+h2h.homeWins+'"></div><div class="h2h-dr" style="flex:'+h2h.draws+'"></div><div class="h2h-aw" style="flex:'+h2h.awayWins+'"></div></div>'
-    +'<div class="h2h-lbl"><span style="color:var(--c)">'+h2h.homeWins+' V</span><span>'+h2h.draws+' N</span><span style="color:var(--p)">'+h2h.awayWins+' V</span></div>'
-    +'</div></div>'
-
-    // Charts
-    +(isPrem?'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">'
-      +'<div class="chart-wrap"><div class="chart-hdr"><div class="chart-title">📈 xG Timeline Cumulé</div></div><div style="position:relative;height:160px"><canvas id="xgChart"></canvas></div></div>'
-      +'<div class="chart-wrap"><div class="chart-hdr"><div class="chart-title">🎲 Distribution Monte Carlo</div></div><div style="position:relative;height:160px"><canvas id="mcChart"></canvas></div></div>'
-      +'</div>':"")
-
-    // Report
-    +'<div style="font-family:var(--fh);font-size:16px;letter-spacing:.3px;margin:14px 0 10px">📋 Rapport d\'Analyse Complet</div>'
-    +'<div class="rg">'+buildReport(m).map(function(r){
-      var cls=r.type==="trap"?"warn":r.type==="poi"?"poi":r.type==="value"||r.type==="safe"?"ok":r.type==="info"?"info":"";
-      return '<div class="rc '+cls+'"><div class="rc-ico">'+(r.icon||"")+'</div><div class="rc-title">'+(r.title||"")+'</div><div class="rc-body">'+(r.content||"")+'</div></div>';
-    }).join("")+'</div>'
-
-    // Books
-    +((m.books&&m.books.length)?'<div style="font-family:var(--fh);font-size:14px;letter-spacing:.3px;margin:13px 0 7px">📚 Sources ('+(m.bookCount)+")</div><div class='bm-grid'>"+m.books.map(function(b){return'<div class="bm-pill">'+(b.name||"–")+'</div>';}).join("")+"</div>":"");
-
-  if(isPrem)setTimeout(function(){renderCharts(m);},100);
+    +'<div class="ah-meta"><div class="ah-lg-pill">'+(m.flag||"")+" "+(m.league||"")+'</div>'
+    +'<div class="ah-time-badge">'+tStr+'</div><span class="bk-n">'+(m.bookCount||0)+' sources de cotes</span></div>'
+    +'<div class="ah-matchup"><div class="ah-team home"><div class="ah-tn">'+(m.home||"")+'</div><div class="ah-odd">'+(odds.h||"–")+'</div></div>'
+    +'<div class="ah-c">'+(odds.d?'<div class="ah-draw-l">Nul</div><div class="ah-draw-v">'+odds.d+'</div>':'<div class="ah-vs">VS</div>')+'</div>'
+    +'<div class="ah-team away"><div class="ah-tn">'+(m.away||"")+'</div><div class="ah-odd">'+(odds.a||"–")+'</div></div></div>'
+    +'<div class="ah-prediction"><div style="text-align:center"><div class="ah-pred-lbl">Score exact le plus probable</div>'
+    +'<div class="ah-pred-score">'+(pred.home!==undefined?pred.home+" – "+pred.away:"—")+'</div></div>'
+    +'<div class="ah-pred-meta"><div class="ah-pred-lbl">Probabilité du score</div><div class="ah-pred-pct">'+(pred.pct||0)+'%</div></div>'
+    +'<div style="text-align:center"><div class="ah-pred-lbl">Buts attendus · Poisson</div><div class="ah-pred-score" style="font-size:24px">'+((xg.home||0).toFixed(2))+' – '+((xg.away||0).toFixed(2))+'</div></div></div>'
+    +'<div class="sec"><div class="sh"><div class="st">Probabilités 1X2 issues du modèle</div></div>'
+    +'<div class="prob-trio"><div class="prob-item"><div class="prob-lbl">Victoire domicile</div><div class="prob-pct">'+Math.round((probs.h||0)*100)+'%</div></div>'
+    +'<div class="prob-item"><div class="prob-lbl">Nul</div><div class="prob-pct">'+Math.round((probs.d||0)*100)+'%</div></div>'
+    +'<div class="prob-item"><div class="prob-lbl">Victoire extérieur</div><div class="prob-pct">'+Math.round((probs.a||0)*100)+'%</div></div></div></div>'
+    +'<div class="sec"><div class="sh"><div class="st">Matrice des scores Poisson</div><div class="sm">Probabilités relatives</div></div>'
+    +renderPoissonMatrix(m)+'</div>'
+    +'<div class="empty" style="padding:12px;font-size:11px">Estimation fondée sur les cotes disponibles. Les compositions, blessures et statistiques détaillées ne sont pas intégrées.</div>';
 }
 
 function renderCharts(m){
