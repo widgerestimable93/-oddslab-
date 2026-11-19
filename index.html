@@ -778,7 +778,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
           <div class="lab-card" onclick="showLabModule('backtest')"><span class="lab-badge beta">BETA</span><div class="lab-ico">📅</div><div class="lab-name">Historical Backtesting</div><div class="lab-desc">5 saisons · Performance tracker<br>ROI & calibration historique</div></div>
           <div class="lab-card" onclick="showLabModule('xai')"><span class="lab-badge exp">SHAP</span><div class="lab-ico">🧠</div><div class="lab-name">Explainable AI</div><div class="lab-desc">SHAP values · Feature attribution<br>Decision path visualization</div></div>
           <div class="lab-card" onclick="showLabModule('quality')"><div class="lab-ico">📋</div><div class="lab-name">Data Quality</div><div class="lab-desc">Completeness · Accuracy<br>Drift detection · Alerts</div></div>
-          <div class="lab-card" onclick="showLabModule('experimental')"><span class="lab-badge beta">EXP</span><div class="lab-ico">⚗️</div><div class="lab-name">Experimental Models</div><div class="lab-desc">Markov Chains · Transformer<br>Graph Neural Networks</div></div>
+          <div class="lab-card" onclick="showLabModule('experimental')"><span class="lab-badge beta">EXP</span><div class="lab-ico">⚗️</div><div class="lab-name">Experimental Models</div><div class="lab-desc">Scores Poisson · probabilités 1X2</div></div>
         </div>
       </div>
       <div id="labContent"></div>
@@ -1012,7 +1012,7 @@ function filterLeague(key){
 function reloadData(){fetchData();toast("Données actualisées","ok");}
 
 function fetchData(silent){
-  if(!silent)loader("Analyse ML en cours...","XGBoost · Poisson Engine · Feature Engineering");
+  if(!silent)loader("Analyse des cotes en cours...","Modèle Poisson · marchés disponibles");
   $("rfIco").className="spin";$("rfTxt").textContent="Chargement";
   get("?action=dashboard",function(r){
     hideLoader();
@@ -1139,7 +1139,7 @@ function mkSbRow(item){
 
 function renderPredPage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Prédictions calibrées via Poisson + XGBoost + Ensemble.",["Matrice Poisson 6×6","Top 10 scores probables","xG Timeline","Confidence intervals","Influence des probabilités de marché"]);$("predCont").style.display="none";return;}
+  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Prédictions calibrées via Poisson + Poisson + Ensemble.",["Matrice Poisson 6×6","Top 10 scores probables","xG Timeline","Confidence intervals","Influence des probabilités de marché"]);$("predCont").style.display="none";return;}
   $("predGate").innerHTML="";$("predCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]);
@@ -1282,33 +1282,19 @@ function renderPoissonMatrix(m){
     +'<div style="padding:10px 16px;font-family:var(--fd);font-size:9px;color:var(--t3);border-top:1px solid var(--edge)">'
     +'λH='+((m.xg&&m.xg.home||0).toFixed(2))+' · λA='+((m.xg&&m.xg.away||0).toFixed(2))
     +' · Score optimal: <span style="color:var(--p);font-weight:700">'+(pred.home!==undefined?pred.home+"-"+pred.away:"–")+'</span>'
-    +' ('+( pred.pct||0)+'%) · XGBoost + Poisson Ensemble · 847K matchs</div></div>';
+    +' ('+( pred.pct||0)+'%) · Poisson + Poisson Ensemble · 847K matchs</div></div>';
   return html;
 }
 
 function buildReport(m){
-  var r=[],v=m.value||{},ai=m.aiScore||{},probs=m.probs||{},xg=m.xg||{},pred=m.prediction||{};
-  var out=v.best||"h",vd=v.data&&v.data[out]||{};
-  var aiP=Math.round((probs[out]||0)*100),bkP=Math.round((vd.bookP||0)*100);
-  var lbl=out==="h"?m.home:out==="a"?m.away:"Nul";
-  r.push({icon:"🎲",type:"poi",title:"Prediction Engine — Score "+(pred.home!==undefined?pred.home+"-"+pred.away:"N/A"),
-    content:"Probabilité: <b>"+(pred.pct||0)+"%</b> | Confiance: <b>"+(ai.confidence||"–")+"</b>\nxG dom: <b>"+((xg.home||0).toFixed(2))+"</b> | xG ext: <b>"+((xg.away||0).toFixed(2))+"</b>\nOver 2.5: <b>"+Math.round((probs.over25||0)*100)+"%</b> | BTTS: <b>"+Math.round((probs.btts||0)*100)+"%</b>"});
-  r.push({icon:"🤖",type:"info",title:"AI Score — "+(ai.score||0)+"/100 | "+(ai.label||"–"),
-    content:"Modèle: <b>XGBoost v3.2 + Poisson Ensemble</b>\nForme dom: <b>"+(xg.homeForm||0)+"</b>/100 | Forme ext: <b>"+(xg.awayForm||0)+"</b>/100\nPPDA dom: <b>"+(8+hs2(m.home||"")%6).toFixed(1)+"</b> | PPDA ext: <b>"+(9+hs2(m.away||"")%7).toFixed(1)+"</b>\nDataset: <b>847K matchs</b> | Features: <b>142</b>"});
-  if(v.detected)
-    r.push({icon:"📊",type:"value",title:"Expected Value +"+v.pct+"%",
-      content:"Issue: <b>"+lbl+"</b> @ <b>"+(vd.odds||"–")+"</b>\nML: <b>"+aiP+"%</b> vs Marché: <b>"+bkP+"% | Δ: <b>+"+(aiP-bkP)+" pts</b>\nxEV = (P_ML × Cote) − 1 = <b>+"+( v.pct||0)+"%</b>"});
-  else
-    r.push({icon:"📊",type:"neutral",title:"Probabilités calibrées",
-      content:"Dom: <b>"+Math.round((probs.h||0)*100)+"%</b>\nNul: <b>"+Math.round((probs.d||0)*100)+"%</b> | Ext: <b>"+Math.round((probs.a||0)*100)+"%</b>\nAucune inefficience de marché significative."});
-  if(m.trap&&m.trap.detected)(m.trap.list||[]).forEach(function(tr){r.push({icon:"⚠️",type:"trap",title:tr.label+" ["+tr.sev+"]",content:"<b>"+tr.desc+"</b>\nNiveau de risque: "+tr.sev});});
-  if(m.safeBets&&m.safeBets.length)r.push({icon:"🛡",type:"safe",title:"AI Forecasts ("+m.safeBets.length+")",
-    content:m.safeBets.map(function(sb){return"<b>"+(sb.icon||"")+" "+(sb.label||"")+"</b> @ <b>"+(sb.odds||"")+"</b>\nConfiance: "+(sb.confidence||0)+"% | Risque: "+(sb.risk||"");}).join("\n\n")});
-  var sc=ai.score||0;
-  r.push({icon:"📋",type:sc>=80?"safe":sc>=65?"good":"risky",title:"Verdict AI",
-    content:sc>=80?"<b style='color:var(--g)'>✅ HAUTE CONFIANCE</b> — Prédiction fiable\nScore ML ≥80 · Recommandation: Position standard"
-      :sc>=65?"<b style='color:var(--o)'>⚡ CONFIANCE MODÉRÉE</b> — Acceptable\nScore ML 65-80 · Recommandation: Risk management"
-      :"<b style='color:var(--r)'>⛔ FAIBLE CONFIANCE</b> — Incertain\nScore ML <65 · Recommandation: Éviter"});
+  var r=[],probs=m.probs||{},xg=m.xg||{},pred=m.prediction||{},odds=m.odds||{};
+  var dt=m.time?new Date(m.time):null;
+  r.push({icon:"🎯",type:"poi",title:"Score exact le plus probable — "+(pred.home!==undefined?pred.home+"-"+pred.away:"—"),
+    content:"Probabilité du score: <b>"+(pred.pct||0)+"%</b>\nButs attendus estimés: <b>"+((xg.home||0).toFixed(2))+"</b> – <b>"+((xg.away||0).toFixed(2))+"</b>"});
+  r.push({icon:"📊",type:"info",title:"Probabilités 1X2 du modèle Poisson",
+    content:"Domicile: <b>"+Math.round((probs.h||0)*100)+"%</b> | Nul: <b>"+Math.round((probs.d||0)*100)+"%</b> | Extérieur: <b>"+Math.round((probs.a||0)*100)+"%</b>\nCotes source: <b>"+(odds.h||"–")+" / "+(odds.d||"–")+" / "+(odds.a||"–")+"</b> | Sources: <b>"+(m.bookCount||0)+"</b>"});
+  r.push({icon:"ℹ️",type:"neutral",title:"Méthode et limites",
+    content:"Taux de buts ajustés aux cotes 1X2 et aux totaux disponibles, puis combinés avec une loi de Poisson. Ce modèle n’intègre pas les compositions, blessures ni statistiques détaillées et ne garantit aucun résultat."});
   return r;
 }
 
