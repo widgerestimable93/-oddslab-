@@ -922,6 +922,7 @@ var LEAGUES=[
 ];
 
 window.addEventListener("load",function(){
+  if(redirectToAppsScript())return;
   var saved=tryJ(localStorage.getItem("ola6_sess"));
   if(saved&&saved.user){S.user=saved.user;S.token=saved.token||"";bootApp();}
   buildLgTabs();
@@ -1483,8 +1484,37 @@ function initPP(){
 function openPP(){if(S.user&&(S.user.plan==="premium"||S.user.plan==="admin")){toast("Déjà Research Pro !","ok");return;}$("ppModal").classList.remove("gone");if(!window.paypal)loadPP();}
 function closePP(){$("ppModal").classList.add("gone");}
 
-function get(p,cb){fetch(GAS_URL+p).then(function(r){return r.json();}).then(function(d){cb(d);}).catch(function(e){cb({ok:false,error:e.toString()});});}
-function post(b,cb){fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b),redirect:"follow"}).then(function(r){return r.json();}).then(function(d){cb(d);}).catch(function(e){cb({ok:false,error:e.toString()});});}
+function hasAppsScriptBridge(){
+  return typeof google!=="undefined"&&google.script&&google.script.run;
+}
+function redirectToAppsScript(){
+  if(!hasAppsScriptBridge()&&/\.github\.io$/i.test(window.location.hostname)){
+    window.location.replace(GAS_URL);return true;
+  }
+  return false;
+}
+function get(p,cb){
+  if(hasAppsScriptBridge()){
+    var params={};
+    new URLSearchParams((p||"").replace(/^\?/,"")).forEach(function(v,k){params[k]=v;});
+    google.script.run
+      .withSuccessHandler(function(data){cb({ok:true,data:data,ts:Date.now(),v:"6.1.0"});})
+      .withFailureHandler(function(err){cb({ok:false,error:err&&err.message||String(err)});})
+      .routeGet(params);
+    return;
+  }
+  fetch(GAS_URL+p).then(function(r){return r.json();}).then(function(d){cb(d);}).catch(function(e){cb({ok:false,error:e.toString()});});
+}
+function post(b,cb){
+  if(hasAppsScriptBridge()){
+    google.script.run
+      .withSuccessHandler(function(data){cb({ok:true,data:data});})
+      .withFailureHandler(function(err){cb({ok:false,error:err&&err.message||String(err)});})
+      .routePost(b);
+    return;
+  }
+  fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b),redirect:"follow"}).then(function(r){return r.json();}).then(function(d){cb(d);}).catch(function(e){cb({ok:false,error:e.toString()});});
+}
 function loader(t,s){$("loaderTxt").textContent=t||"Chargement...";$("loaderSub").textContent=s||"";$("loader").classList.remove("gone");}
 function hideLoader(){$("loader").classList.add("gone");}
 var _tt;
