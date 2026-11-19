@@ -1,6 +1,6 @@
 # OddsLab
 
-Générateur de scores exacts probabilistes pour 25 compétitions de football. Le modèle Poisson ajuste les buts attendus aux cotes 1X2 et, lorsque disponibles, aux marchés over/under 2,5. Les scores affichés sont des estimations de marché, jamais des garanties; le modèle ne reçoit pas les compositions, blessures ou statistiques détaillées des équipes.
+Générateur de scores exacts probabilistes pour 25 compétitions de football. Les pages « Cotes réelles » et « Matchs et cotes par ligue » affichent les matchs à venir réellement retournés par The Odds API, avec leurs cotes 1X2 et leur nombre de bookmakers. Ce ne sont pas des classements officiels ni des notes Elo. Le modèle Poisson ajuste les buts attendus aux cotes 1X2 et, lorsque disponibles, aux marchés over/under 2,5. Les scores affichés sont des estimations de marché, jamais des garanties; le modèle ne reçoit pas les compositions, blessures ou statistiques détaillées des équipes.
 
 ## Mise en service
 
