@@ -1068,7 +1068,7 @@ function renderDashboard(){
 
 function mkCard(m){
   var ai=m.aiScore||{},v=m.value||{},pred=m.prediction||{},xg=m.xg||{},probs=m.probs||{};
-  var aiCls=(ai.label||"").indexOf("SAFE")>-1?"safe":(ai.label||"").indexOf("GOOD")>-1?"good":"risky";
+  var aiCls=(ai.label||"").indexOf("STRONG")>-1?"safe":(ai.label||"").indexOf("MODERATE")>-1?"good":"risky";
   var confCls=ai.score>=80?"high-conf":ai.score>=65?"med-conf":"low-conf";
   var hasD=m.odds&&m.odds.d>0;
   var dt=m.time?new Date(m.time):null;
