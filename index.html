@@ -1281,8 +1281,8 @@ function renderPoissonMatrix(m){
   html+='</tbody></table></div>'
     +'<div style="padding:10px 16px;font-family:var(--fd);font-size:9px;color:var(--t3);border-top:1px solid var(--edge)">'
     +'λH='+((m.xg&&m.xg.home||0).toFixed(2))+' · λA='+((m.xg&&m.xg.away||0).toFixed(2))
-    +' · Score optimal: <span style="color:var(--p);font-weight:700">'+(pred.home!==undefined?pred.home+"-"+pred.away:"–")+'</span>'
-    +' ('+( pred.pct||0)+'%) · Poisson + Poisson Ensemble · 847K matchs</div></div>';
+    +' · Score le plus probable: <span style="color:var(--p);font-weight:700">'+(pred.home!==undefined?pred.home+"-"+pred.away:"–")+'</span>'
+    +' ('+( pred.pct||0)+'%) · estimation Poisson depuis les cotes</div></div>';
   return html;
 }
 
