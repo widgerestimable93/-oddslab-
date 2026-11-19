@@ -602,10 +602,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="auth-logo">
         <div class="auth-logo-mark">⚡</div>
         <div class="auth-logo-name">OddsLab<br><em>INTELLIGENCE</em></div>
-        <div class="auth-logo-tag">AI Football Analytics · ML Engine · Predictive Intelligence v6.0</div>
+        <div class="auth-logo-tag">Modèle Poisson de score · estimations fondées sur les cotes v6.1</div>
         <div class="auth-badge-row">
-          <span class="auth-badge ml">XGBoost</span>
-          <span class="auth-badge ai">Neural Net</span>
+          <span class="auth-badge ml">Poisson</span>
+          <span class="auth-badge ai">Cotes marché</span>
           <span class="auth-badge ds">Poisson Engine</span>
           <span class="auth-badge ml">Monte Carlo</span>
           <span class="auth-badge ai">Bayesian</span>
@@ -733,7 +733,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     <div id="predictionsPage" class="page">
       <div id="predGate"></div>
       <div id="predCont">
-        <div class="sec"><div class="sh"><div class="st">🎯 Prediction Engine — Score Poisson <span class="sc" id="ct-pred">0</span></div></div><div class="mg" id="g-pred"></div></div>
+        <div class="sec"><div class="sh"><div class="st">🎯 Scores exacts probables — modèle Poisson <span class="sc" id="ct-pred">0</span><span style="font:10px var(--fd);color:var(--t3);margin-left:8px">estimations, jamais garanties</span></div></div><div class="mg" id="g-pred"></div></div>
       </div>
     </div>
 
@@ -898,12 +898,31 @@ var REFRESH=300000;
 var S={user:null,token:null,data:null,page:"dashboard",league:null,ticket:[],timer:null,prevPage:"dashboard"};
 var LEAGUES=[
   {key:"all",name:"Tout",flag:"🌍",color:"#3a4a5e"},
-  {key:"soccer_epl",name:"EPL",flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",color:"#3D195B"},
+  {key:"soccer_epl",name:"Premier League",flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",color:"#3D195B"},
   {key:"soccer_spain_la_liga",name:"La Liga",flag:"🇪🇸",color:"#EE8707"},
   {key:"soccer_italy_serie_a",name:"Serie A",flag:"🇮🇹",color:"#024494"},
   {key:"soccer_germany_bundesliga",name:"Bundesliga",flag:"🇩🇪",color:"#D3010C"},
   {key:"soccer_france_ligue_one",name:"Ligue 1",flag:"🇫🇷",color:"#0055A4"},
-  {key:"soccer_uefa_champs_league",name:"UCL",flag:"🌍",color:"#1A1F8C"}
+  {key:"soccer_uefa_champs_league",name:"Champions League",flag:"🌍",color:"#1A1F8C"},
+  {key:"soccer_uefa_europa_league",name:"Europa League",flag:"🌍",color:"#F36F21"},
+  {key:"soccer_uefa_europa_conference_league",name:"Conference League",flag:"🌍",color:"#52A447"},
+  {key:"soccer_netherlands_eredivisie",name:"Eredivisie",flag:"🇳🇱",color:"#F36C21"},
+  {key:"soccer_portugal_primeira_liga",name:"Primeira Liga",flag:"🇵🇹",color:"#0B7A3B"},
+  {key:"soccer_efl_champ",name:"Championship",flag:"🏴",color:"#314A93"},
+  {key:"soccer_spl",name:"Scottish Premiership",flag:"🏴",color:"#1B5E3C"},
+  {key:"soccer_turkey_super_league",name:"Süper Lig",flag:"🇹🇷",color:"#E30A17"},
+  {key:"soccer_saudi_arabia_pro_league",name:"Saudi Pro League",flag:"🇸🇦",color:"#006C35"},
+  {key:"soccer_usa_mls",name:"MLS",flag:"🇺🇸",color:"#173B65"},
+  {key:"soccer_brazil_campeonato",name:"Brasileirão",flag:"🇧🇷",color:"#138A45"},
+  {key:"soccer_argentina_primera_division",name:"Primera División",flag:"🇦🇷",color:"#75AADB"},
+  {key:"soccer_belgium_first_div",name:"Belgian Pro League",flag:"🇧🇪",color:"#D40000"},
+  {key:"soccer_austria_bundesliga",name:"Austrian Bundesliga",flag:"🇦🇹",color:"#ED2939"},
+  {key:"soccer_germany_bundesliga2",name:"2. Bundesliga",flag:"🇩🇪",color:"#D3010C"},
+  {key:"soccer_france_ligue_two",name:"Ligue 2",flag:"🇫🇷",color:"#0055A4"},
+  {key:"soccer_italy_serie_b",name:"Serie B",flag:"🇮🇹",color:"#024494"},
+  {key:"soccer_spain_segunda_division",name:"LaLiga 2",flag:"🇪🇸",color:"#EE8707"},
+  {key:"soccer_mexico_ligamx",name:"Liga MX",flag:"🇲🇽",color:"#006847"},
+  {key:"soccer_conmebol_copa_libertadores",name:"Copa Libertadores",flag:"🌎",color:"#F4B400"}
 ];
 
 window.addEventListener("load",function(){
@@ -1294,23 +1313,13 @@ function renderAnalysis(matchId){
     +'<div class="xg-val">'+((xg.home||0).toFixed(2))+'</div>'
     +'<div class="xg-bar-track"><div class="xg-bar-fill" style="width:'+Math.min(100,(xg.home||0)/4*100)+'%"></div></div>'
     +'<div class="xg-stats">'
-    +'<span class="xg-stat">Atk: <b>'+((xg.homeAtk||0).toFixed(2))+'</b></span>'
-    +'<span class="xg-stat">Déf: <b>'+((xg.homeDef||0).toFixed(2))+'</b></span>'
-    +'<span class="xg-stat">xA: <b>'+((xg.home||0)*0.7).toFixed(2)+'</b></span>'
-    +'<span class="xg-stat">Shots: <b>'+(xg.homeShots||0)+'</b></span>'
-    +'<span class="xg-stat">Poss: <b>'+(xg.homePoss||0)+'%</b></span>'
-    +'<span class="xg-stat">PPDA: <b>'+(8+hs2(m.home||"")%6).toFixed(1)+'</b></span>'
+    +'<span class="xg-stat">Estimation Poisson issue des cotes</span>'
     +'</div></div>'
     +'<div class="xg-card away-xg"><div class="xg-title">'+(m.away||"")+'</div>'
     +'<div class="xg-val">'+((xg.away||0).toFixed(2))+'</div>'
     +'<div class="xg-bar-track"><div class="xg-bar-fill" style="width:'+Math.min(100,(xg.away||0)/4*100)+'%"></div></div>'
     +'<div class="xg-stats">'
-    +'<span class="xg-stat">Atk: <b>'+((xg.awayAtk||0).toFixed(2))+'</b></span>'
-    +'<span class="xg-stat">Déf: <b>'+((xg.awayDef||0).toFixed(2))+'</b></span>'
-    +'<span class="xg-stat">xA: <b>'+((xg.away||0)*0.65).toFixed(2)+'</b></span>'
-    +'<span class="xg-stat">Shots: <b>'+(xg.awayShots||0)+'</b></span>'
-    +'<span class="xg-stat">Poss: <b>'+(xg.awayPoss||0)+'%</b></span>'
-    +'<span class="xg-stat">PPDA: <b>'+(9+hs2(m.away||"")%7).toFixed(1)+'</b></span>'
+    +'<span class="xg-stat">Estimation Poisson issue des cotes</span>'
     +'</div></div>'
     +'</div>'
 
