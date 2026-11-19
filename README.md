@@ -6,8 +6,9 @@ Générateur de scores exacts probabilistes pour 25 compétitions de football. L
 
 1. Dans le projet Google Apps Script déjà lié à l’application, remplacez le contenu de `Code.gs` par ce fichier et remplacez le fichier HTML nommé `index` par la dernière version de `index.html` du dépôt.
 2. Dans **Paramètres du projet → Propriétés du script**, ajoutez `ODDS_KEY` avec une nouvelle clé The Odds API. `GEMINI_KEY` est facultative; sans elle, l’analyse utilise le résumé de secours. `ADMIN_EMAIL` et `ADMIN_PASS` sont facultatives et activent le compte administrateur quand les deux sont définies.
-3. Enregistrez, puis mettez à jour le déploiement Web App existant vers une nouvelle version. La page GitHub Pages redirige vers la Web App Apps Script afin d’éviter le blocage CORS; dans cette Web App, `index.html` appelle le serveur via `google.script.run`. Si vous créez un nouveau déploiement avec une URL différente, mettez à jour `GAS_URL` dans `index.html` avant de publier la page GitHub.
-4. Vérifiez que la feuille Google Sheets utilisée par le script est disponible et que l’accès Web App correspond à votre mode de connexion.
+3. Dans l’éditeur Apps Script, choisissez `setupDatabase` dans la liste des fonctions et cliquez **Exécuter**. Autorisez l’accès à Google Sheets; cette fonction crée la base et ses onglets une seule fois.
+4. Enregistrez, puis mettez à jour le déploiement Web App existant vers une nouvelle version. La page GitHub Pages redirige vers la Web App Apps Script afin d’éviter le blocage CORS; dans cette Web App, `index.html` appelle le serveur via `google.script.run`. Si vous créez un nouveau déploiement avec une URL différente, mettez à jour `GAS_URL` dans `index.html` avant de publier la page GitHub.
+5. Dans le déploiement, choisissez **Exécuter en tant que : moi** pour que le serveur utilise l’autorisation Sheets du propriétaire. Vérifiez aussi l’accès Web App.
 
 Le serveur interroge les 25 compétitions à la première requête, puis garde les résultats en cache pendant 15 minutes. Vérifiez la consommation et les limites de votre forfait The Odds API avant d’activer ce déploiement.
 
