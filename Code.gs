@@ -119,9 +119,25 @@ function routePost(b) {
 // ══════════════════════════════════════════════════════════════════
 function getDB() {
   var props = PropertiesService.getScriptProperties(), id = props.getProperty("DB_ID_V5"), ss;
-  try { ss = id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet(); }
-  catch(e) { ss = SpreadsheetApp.create("OddsLab_Analytics_v6"); props.setProperty("DB_ID_V5", ss.getId()); }
+  if(id) {
+    ss = SpreadsheetApp.openById(id);
+  } else {
+    ss = SpreadsheetApp.getActiveSpreadsheet();
+    if(!ss) {
+      ss = SpreadsheetApp.create("OddsLab_Analytics_v6");
+      props.setProperty("DB_ID_V5", ss.getId());
+    }
+  }
   return ss;
+}
+
+// Exécuter une fois depuis l’éditeur Apps Script pour autoriser Sheets
+// et créer la base lorsque le projet n’est lié à aucune feuille.
+function setupDatabase() {
+  var ss = getDB();
+  getSheet(CFG.SHEETS.users);
+  getSheet(CFG.SHEETS.logs);
+  return { spreadsheetId:ss.getId(), url:ss.getUrl() };
 }
 function getSheet(name) {
   var ss = getDB(), sh = ss.getSheetByName(name);
