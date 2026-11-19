@@ -549,19 +549,14 @@ function getMostLikelyScore(matrix) {
 // ══════════════════════════════════════════════════════════════════
 function computeAIScore(xg, probs, odds, raw) {
   var best = probs.h>=probs.a&&probs.h>=probs.d ? "h" : probs.a>=probs.d ? "a" : "d";
-  var bestP = Math.max(probs.h, probs.d||0, probs.a);
-  var xgPower = best==="h" ? cl(xg.home/2.5,0,1) : cl(xg.away/2.0,0,1);
-  var mktScore = cl(bestP,0,1);
-  var h2hSeed = hs((raw.home_team||"")+(raw.away_team||""));
-  var h2hScore = (h2hSeed%40)/100+0.30;
-  var topProb = getMostLikelyScore(poissonMatrix(xg.home,xg.away)).prob;
-  var consistency = cl(topProb*8,0,1);
-  var rawScore = xgPower*0.35 + mktScore*0.30 + h2hScore*0.15 + consistency*0.20;
-  var score = Math.round(cl(rawScore*120,28,97));
+  var bestP = Math.max(probs.h||0, probs.d||0, probs.a||0);
+  var matrix=poissonMatrix(xg.home||0,xg.away||0);
+  var topProb=getMostLikelyScore(matrix).prob||0;
+  var score=Math.round(cl((bestP*0.75+topProb*0.25)*100,0,100));
   return {
     score:score,
-    label:score>=80?"SAFE BET":score>=65?"GOOD BET":"RISKY",
-    confidence:score>=80?"HIGH":score>=65?"MEDIUM":"LOW",
+    label:score>=65?"STRONG MODEL SIGNAL":score>=50?"MODERATE MODEL SIGNAL":"LOW MODEL SIGNAL",
+    confidence:score>=65?"HIGH":score>=50?"MEDIUM":"LOW",
     best:best,
     bestProb:r3(bestP)
   };
