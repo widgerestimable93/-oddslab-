@@ -671,7 +671,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="ni" onclick="nav('scanner')" data-p="scanner"><span class="ni-ico">📊</span><span class="nl">Value Scanner</span><span class="ni-bdg g" id="sb-vb">0</span></div>
       <div class="ni" onclick="nav('safebets')" data-p="safebets"><span class="ni-ico">🛡</span><span class="nl">AI Forecasts</span><span class="ni-bdg o" id="sb-sb">0</span></div>
       <div class="ng" style="margin-top:6px">Research</div>
-      <div class="ni" onclick="nav('lab')" data-p="lab"><span class="ni-ico">🔬</span><span class="nl">AI Research Lab</span><span class="ni-bdg p">NEW</span></div>
+      <div class="ni" onclick="nav('lab')" data-p="lab"><span class="ni-ico">🔬</span><span class="nl">Outils Poisson</span><span class="ni-bdg p">NEW</span></div>
       <div class="ni" onclick="nav('elo')" data-p="elo"><span class="ni-ico">📈</span><span class="nl">Elo Ratings</span></div>
       <div class="ni" onclick="nav('leagues')" data-p="leagues"><span class="ni-ico">🏆</span><span class="nl">Classements</span></div>
       <div class="ng" style="margin-top:6px">Outils</div>
@@ -769,11 +769,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
         <div class="mib-sep"></div>
         <div class="mib-item"><span>Last Retrain</span><span class="mib-val o">Aujourd'hui</span></div>
       </div>
-      <div class="sec"><div class="sh"><div class="st">🔬 AI Research Lab</div></div>
+      <div class="sec"><div class="sh"><div class="st">🔬 Outils Poisson</div></div>
         <div class="lab-grid">
-          <div class="lab-card" onclick="showLabModule('dataset')"><span class="lab-badge new">LIVE</span><div class="lab-ico">🗄️</div><div class="lab-name">Dataset Explorer</div><div class="lab-desc">847K matchs · 142 features<br>Visualisation & audit qualité</div></div>
-          <div class="lab-card" onclick="showLabModule('features')"><span class="lab-badge exp">ML</span><div class="lab-ico">🔍</div><div class="lab-name">Feature Explorer</div><div class="lab-desc">Importance SHAP · Corrélation<br>Distribution & outliers</div></div>
-          <div class="lab-card" onclick="showLabModule('models')"><span class="lab-badge new">7</span><div class="lab-ico">🤖</div><div class="lab-name">Model Comparison</div><div class="lab-desc">Poisson · Cotes marché · Probabilités marché<br>Score exact · Poisson</div></div>
+          <div class="lab-card" onclick="showLabModule('dataset')"><span class="lab-badge new">LIVE</span><div class="lab-ico">🗄️</div><div class="lab-name">Dataset Explorer</div><div class="lab-desc">Cotes 1X2 · buts attendus<br>Visualisation & audit qualité</div></div>
+          <div class="lab-card" onclick="showLabModule('features')"><span class="lab-badge exp">ML</span><div class="lab-ico">🔍</div><div class="lab-name">Facteurs du modèle</div><div class="lab-desc">Importance SHAP · Corrélation<br>Distribution & outliers</div></div>
+          <div class="lab-card" onclick="showLabModule('models')"><span class="lab-badge new">7</span><div class="lab-ico">🤖</div><div class="lab-name">Méthode Poisson</div><div class="lab-desc">Poisson · Cotes marché · Probabilités marché<br>Score exact · Poisson</div></div>
           <div class="lab-card" onclick="showLabModule('simulation')"><span class="lab-badge exp">MC</span><div class="lab-ico">🎲</div><div class="lab-name">Simulation Center</div><div class="lab-desc">Monte Carlo · 10K itérations<br>Distribution de résultats</div></div>
           <div class="lab-card" onclick="showLabModule('backtest')"><span class="lab-badge beta">BETA</span><div class="lab-ico">📅</div><div class="lab-name">Historical Backtesting</div><div class="lab-desc">5 saisons · Performance tracker<br>ROI & calibration historique</div></div>
           <div class="lab-card" onclick="showLabModule('xai')"><span class="lab-badge exp">SHAP</span><div class="lab-ico">🧠</div><div class="lab-name">Explainable AI</div><div class="lab-desc">SHAP values · Feature attribution<br>Decision path visualization</div></div>
@@ -838,7 +838,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
             <li class="no">Prediction Engine complet</li>
             <li class="no">Monte Carlo Simulation</li>
             <li class="no">Explication des probabilités</li>
-            <li class="no">AI Research Lab</li>
+            <li class="no">Outils Poisson</li>
           </ul>
           <button class="plan-btn curr">Plan actuel</button>
         </div>
@@ -852,7 +852,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
             <li class="yes"><strong>Poisson Engine + Matrice 6×6</strong></li>
             <li class="yes"><strong>Monte Carlo 10K simulations</strong></li>
             <li class="yes"><strong>SHAP Feature Importance</strong></li>
-            <li class="yes"><strong>AI Research Lab complet</strong></li>
+            <li class="yes"><strong>Outils Poisson complet</strong></li>
             <li class="yes"><strong>xG · xA · PPDA · Elo</strong></li>
           </ul>
           <button class="plan-btn upg" onclick="openPP()" id="upgBtn">Passer Research Pro →</button>
@@ -1318,66 +1318,20 @@ function buildReport(m){
 function showLabModule(mod){
   var c=$("labContent");
   if(mod==="simulation"){
-    c.innerHTML='<div class="sec"><div class="sh"><div class="st">🎲 Monte Carlo Simulation Center</div></div>'
+    c.innerHTML='<div class="sec"><div class="sh"><div class="st">🎲 Simulateur de scores Poisson</div></div>'
+      +'<div class="rc info"><div class="rc-ico">ℹ️</div><div class="rc-body">Simulation mathématique à partir des buts attendus saisis ci-dessous; ce n’est pas un historique de résultats.</div></div>'
       +'<div class="sim-controls"><div class="sim-ctrl-row">'
-      +'<div class="sim-field"><div class="sim-label">λ Domicile (xG)</div><input class="sim-input" id="simH" type="number" value="1.8" step="0.1" min="0.1" max="5"></div>'
-      +'<div class="sim-field"><div class="sim-label">λ Extérieur (xG)</div><input class="sim-input" id="simA" type="number" value="1.2" step="0.1" min="0.1" max="5"></div>'
+      +'<div class="sim-field"><div class="sim-label">Buts attendus domicile</div><input class="sim-input" id="simH" type="number" value="1.5" step="0.1" min="0.1" max="5"></div>'
+      +'<div class="sim-field"><div class="sim-label">Buts attendus extérieur</div><input class="sim-input" id="simA" type="number" value="1.2" step="0.1" min="0.1" max="5"></div>'
       +'<div class="sim-field"><div class="sim-label">Simulations</div><input class="sim-input" id="simN" type="number" value="10000" step="1000" min="1000" max="50000"></div>'
-      +'<button class="sim-btn" onclick="runSimulation()">▶ Lancer</button>'
+      +'<button class="sim-btn" onclick="runSimulation()">▶ Simuler</button>'
       +'</div></div><div id="simResult"></div></div>';
-  }else if(mod==="models"){
-    var rows=[["XGBoost v3.2","73.4%","0.812","0.741","0.187","48ms","● PROD","g"],
-      ["LightGBM v4.0","72.1%","0.804","0.728","0.195","32ms","● PROD","g"],
-      ["Neural Net LSTM","70.8%","0.791","0.712","0.208","142ms","● TEST","o"],
-      ["Random Forest","69.3%","0.778","0.698","0.221","68ms","● PROD","g"],
-      ["Poisson Baseline","65.2%","0.741","0.661","0.248","8ms","● PROD","c"],
-      ["Ensemble v6","74.8%","0.823","0.756","0.178","210ms","● BETA","p"],
-      ["Markov Chain","62.1%","0.712","0.631","0.271","12ms","● EXP","t2"]];
-    c.innerHTML='<div class="sec"><div class="sh"><div class="st">🤖 Model Comparison</div></div>'
-      +'<div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Modèle</th><th>Accuracy</th><th>ROC AUC</th><th>F1</th><th>Brier</th><th>Latence</th><th>Status</th></tr></thead><tbody>'
-      +rows.map(function(row){
-        return'<tr><td><b>'+row[0]+'</b></td><td style="color:var(--'+row[7]+')">'+row[1]+'</td><td>'+row[2]+'</td><td>'+row[3]+'</td><td>'+row[4]+'</td><td style="font-family:var(--fd);font-size:10px">'+row[5]+'</td><td style="font-family:var(--fd);font-size:9px;color:var(--'+row[7]+')">'+row[6]+'</td></tr>';
-      }).join("")+'</tbody></table></div></div>';
-  }else if(mod==="features"){
-    var feats=[["xG Domicile (5m)","0.284","+"],["Forme récente H","0.251","+"],["Elo Rating diff.","0.198","+"],
-      ["PPDA Domicile","0.187","–"],["Jours de repos","0.143","+"],["xG Extérieur","0.139","–"],
-      ["Blessures clés","0.132","–"],["Possession avg","0.121","+"],["H2H last 5","0.098","+"],["Météo","0.042","+"]];
-    c.innerHTML='<div class="sec"><div class="sh"><div class="st">🔍 Feature Explorer — SHAP Summary</div></div>'
-      +'<div class="explain-panel"><div class="explain-title">Feature Importance Global</div>'
-      +'<div class="explain-sub">Contribution moyenne sur l\'ensemble du dataset | SHAP TreeExplainer</div>'
-      +feats.map(function(f,i){
-        var pct=parseFloat(f[1])*100,col=f[2]==="+"?"var(--g)":"var(--r)";
-        return'<div class="shap-row"><span class="shap-feat">'+(i+1)+'. '+f[0]+'</span>'
-          +'<div class="shap-bar-wrap">'
-          +(f[2]==="+"?'<div style="width:1px;height:16px;background:var(--t4)"></div><div class="shap-pos" style="width:'+pct*2+'px;background:'+col+'"></div>'
-            :'<div class="shap-neg" style="width:'+pct*2+'px;background:'+col+';margin-left:auto"></div><div style="width:1px;height:16px;background:var(--t4)"></div>')
-          +'</div><span class="shap-val" style="color:'+col+'">'+f[2]+f[1]+'</span></div>';
-      }).join("")+'</div></div>';
-  }else if(mod==="xai"){
-    c.innerHTML='<div class="sec"><div class="sh"><div class="st">🧠 Explainable AI — SHAP Analysis</div></div>'
-      +'<div class="rc info" style="margin-bottom:14px"><div class="rc-ico">🧠</div><div class="rc-title">SHAP (SHapley Additive exPlanations)</div>'
-      +'<div class="rc-body">Méthode basée sur la théorie des jeux coopératifs. Chaque feature reçoit une valeur SHAP représentant sa contribution marginale.\nBase value: <b>0.445</b> | Sortie: <b>0.673</b>\nModèle: <b>XGBoost TreeExplainer</b></div></div>'
-      +'<div class="explain-panel"><div class="explain-title">SHAP Waterfall — Contribution par Feature</div>'
-      +[["xG Domicile","+0.142","var(--g)"],["Forme récente","+0.098","var(--c)"],["Elo Diff","+0.076","var(--c2)"],
-        ["PPDA","-0.045","var(--r)"],["Blessures","-0.032","var(--r)"],["Repos","+0.028","var(--g)"],["Météo","+0.006","var(--t2)"]
-      ].map(function(f){
-        var pct=Math.abs(parseFloat(f[1]))*400;
-        return'<div class="shap-row"><span class="shap-feat">'+f[0]+'</span>'
-          +'<div style="flex:1;height:10px;background:'+f[2]+';opacity:.3;border-radius:2px;max-width:'+pct+'px"></div>'
-          +'<span class="shap-val" style="color:'+f[2]+'">'+f[1]+'</span></div>';
-      }).join("")+'</div></div>';
-  }else if(mod==="backtest"){
-    c.innerHTML='<div class="sec"><div class="sh"><div class="st">📅 Historical Backtesting</div></div>'
-      +'<div class="metrics-grid">'
-      +'<div class="metric-card"><div class="metric-lbl">Saisons testées</div><div class="metric-val c">5</div><div class="metric-sub">2019-2024</div></div>'
-      +'<div class="metric-card"><div class="metric-lbl">Matchs backtestés</div><div class="metric-val g">18 420</div><div class="metric-sub">5 ligues top</div></div>'
-      +'<div class="metric-card"><div class="metric-lbl">Accuracy historique</div><div class="metric-val g">71.2%</div><div class="metric-sub">Moyenne 5 saisons</div></div>'
-      +'<div class="metric-card"><div class="metric-lbl">ROI simulé</div><div class="metric-val o">+8.4%</div><div class="metric-sub">Stratégie xEV</div></div>'
-      +'</div></div>';
   }else{
-    c.innerHTML='<div class="rc info"><div class="rc-ico">🔬</div><div class="rc-title">Module en développement</div><div class="rc-body">Disponible dans la prochaine version de l\'AI Research Lab.</div></div>';
+    c.innerHTML='<div class="sec"><div class="sh"><div class="st">Modèle et données</div></div>'
+      +'<div class="rc info"><div class="rc-ico">📊</div><div class="rc-title">Poisson calibré aux cotes</div>'
+      +'<div class="rc-body">Les buts attendus sont ajustés aux probabilités 1X2 et aux totaux over/under 2,5 lorsqu’ils sont disponibles. OddsLab ne dispose pas ici d’un historique de résultats validé; aucune précision, valeur SHAP ou performance de backtest n’est revendiquée.</div></div></div>';
   }
-  c.scrollIntoView({behavior:"smooth"});
+  c.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 function runSimulation(){
