@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "OddsLab Intelligence",
+  "short_name": "OddsLab",
+  "description": "Analyse des cotes et estimations probabilistes de football.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#040608",
+  "theme_color": "#040608",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
