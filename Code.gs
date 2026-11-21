@@ -396,7 +396,7 @@ function getLeagueMatches(leagueKey) {
 function enrichMatch(raw, lg) {
   if(!raw || !raw.bookmakers || raw.bookmakers.length === 0) return null;
 
-  var odds  = extractOdds(raw.bookmakers);
+  var odds  = extractOdds(raw.bookmakers, raw.home_team, raw.away_team);
   if(!odds.h || !odds.a) return null; // pas de cotes = inutilisable
 
   var xg    = computeXG(raw, lg, odds);
@@ -420,7 +420,7 @@ function enrichMatch(raw, lg) {
     odds:       odds,        // ← cotes RÉELLES des bookmakers
     bookCount:  raw.bookmakers.length,
     books:      raw.bookmakers.slice(0,8).map(function(b){
-                  return { name:b.title, odds:extractOdds([b]) };
+                  return { name:b.title, odds:extractOdds([b], raw.home_team, raw.away_team) };
                 }),
     xg:         xg,
     poisson:    poi,
@@ -434,28 +434,42 @@ function enrichMatch(raw, lg) {
   };
 }
 
-// ── Extraction des meilleures cotes sur l'ensemble des bookmakers ─
-function extractOdds(bms) {
+// ── Extraction des meilleures cotes par nom d'équipe ───────────────
+function normalizeTeamName_(name) {
+  return String(name||"").toLowerCase()
+    .normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")
+    .replace(/[^a-z0-9]/g,"");
+}
+
+function outcomeSide_(name, homeTeam, awayTeam) {
+  var n=normalizeTeamName_(name);
+  if(!n) return "";
+  if(n===normalizeTeamName_(homeTeam)||n==="home") return "h";
+  if(n===normalizeTeamName_(awayTeam)||n==="away") return "a";
+  if(n==="draw"||n==="tie"||n==="x"||n==="matchnul"||n==="nul") return "d";
+  return "";
+}
+
+function extractOdds(bms, homeTeam, awayTeam) {
   var h=0, d=0, a=0, ov15=0, un15=0, ov25=0, un25=0;
   bms.forEach(function(bm){
     (bm.markets||[]).forEach(function(mkt){
       if(mkt.key==="h2h"){
-        var oc=mkt.outcomes||[];
-        oc.forEach(function(o){
-          if(o.name && o.price){
-            // Le premier outcome est l'équipe à domicile dans The Odds API
-            if(oc.indexOf(o)===0 && o.price>h) h=o.price;
-            else if(oc.length===3 && oc.indexOf(o)===1 && o.price>d) d=o.price;
-            else if(oc.indexOf(o)===oc.length-1 && o.price>a) a=o.price;
-          }
+        (mkt.outcomes||[]).forEach(function(o){
+          var side=outcomeSide_(o.name,homeTeam,awayTeam);
+          var price=Number(o.price)||0;
+          if(side==="h"&&price>h) h=price;
+          else if(side==="d"&&price>d) d=price;
+          else if(side==="a"&&price>a) a=price;
         });
       }
       if(mkt.key==="totals"){
         (mkt.outcomes||[]).forEach(function(o){
-          if(o.name==="Over"  && o.point===1.5 && o.price>ov15) ov15=o.price;
-          if(o.name==="Under" && o.point===1.5 && o.price>un15) un15=o.price;
-          if(o.name==="Over"  && o.point===2.5 && o.price>ov25) ov25=o.price;
-          if(o.name==="Under" && o.point===2.5 && o.price>un25) un25=o.price;
+          var point=Number(o.point), price=Number(o.price)||0;
+          if(o.name==="Over"  && point===1.5 && price>ov15) ov15=price;
+          if(o.name==="Under" && point===1.5 && price>un15) un15=price;
+          if(o.name==="Over"  && point===2.5 && price>ov25) ov25=price;
+          if(o.name==="Under" && point===2.5 && price>un25) un25=price;
         });
       }
     });
@@ -604,12 +618,17 @@ function detectTrap(raw, odds, probs) {
     var pr=[];
     bms.forEach(function(b){
       (b.markets||[]).forEach(function(m){
-        if(m.key==="h2h"&&m.outcomes&&m.outcomes[0]) pr.push(m.outcomes[0].price);
+        if(m.key==="h2h"){
+          (m.outcomes||[]).forEach(function(o){
+            if(outcomeSide_(o.name,raw.home_team,raw.away_team)==="h"&&(Number(o.price)||0)>1)
+              pr.push(Number(o.price));
+          });
+        }
       });
     });
     if(pr.length>=2){
       var mx=Math.max.apply(null,pr), mn=Math.min.apply(null,pr);
-      if((mx-mn)/mn>0.18)
+      if(mn>0&&(mx-mn)/mn>0.18)
         list.push({type:"ODDS_GAP",sev:"MEDIUM",label:"Écart de cotes",
           desc:"Désaccord "+(Math.round((mx-mn)/mn*100))+"% entre bookmakers"});
     }
