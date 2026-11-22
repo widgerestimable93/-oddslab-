@@ -258,6 +258,13 @@ function registerUser(email, password, name) {
   }
 }
 
+function getPublicConfig_() {
+  var clientId=getSecret_("PAYPAL_CLIENT_ID"), secret=getSecret_("PAYPAL_CLIENT_SECRET");
+  var planId=getSecret_("PAYPAL_PLAN_ID"), env=getSecret_("PAYPAL_ENV").toLowerCase();
+  var enabled=!!(clientId&&secret&&planId&&(env==="sandbox"||env==="live")&&!/YOUR_|CHANGE_ME/i.test(clientId+secret+planId));
+  return enabled?{paypalEnabled:true,paypalClientId:clientId,paypalPlanId:planId}:{paypalEnabled:false};
+}
+
 function paypalApiBase_() {
   var env=getSecret_("PAYPAL_ENV").toLowerCase();
   if(env!=="sandbox"&&env!=="live") throw new Error("PAYPAL_ENV doit être sandbox ou live.");
@@ -510,7 +517,7 @@ function enrichMatch(raw, lg) {
   if(!raw || !raw.bookmakers || raw.bookmakers.length === 0) return null;
 
   var odds  = extractOdds(raw.bookmakers, raw.home_team, raw.away_team);
-  if(!odds.h || !odds.a) return null; // pas de cotes = inutilisable
+  if(!(odds.h>1&&odds.d>1&&odds.a>1)) return null; // 1X2 complet indispensable
 
   var xg    = computeXG(raw, lg, odds);
   var poi   = poissonMatrix(xg.home, xg.away);
@@ -605,11 +612,11 @@ function fitGoalRates(odds, lg) {
   var best={home:Math.max(.2,(lg.avgGoals||2.7)*.54),away:Math.max(.2,(lg.avgGoals||2.7)*.46)};
   var bestLoss=Infinity;
   for(var h=0.2;h<=4.001;h+=0.1){
-    var ph=[];for(var x=0;x<=8;x++)ph[x]=poissonProb(h,x);
+    var ph=[];for(var x=0;x<=10;x++)ph[x]=poissonProb(h,x);
     for(var a=0.2;a<=4.001;a+=0.1){
-      var pa=[];for(var y=0;y<=8;y++)pa[y]=poissonProb(a,y);
+      var pa=[];for(var y=0;y<=10;y++)pa[y]=poissonProb(a,y);
       var mh=0,md=0,ma=0,under25=0;
-      for(var x=0;x<=8;x++)for(var y=0;y<=8;y++){
+      for(var x=0;x<=10;x++)for(var y=0;y<=10;y++){
         var p=ph[x]*pa[y];
         if(x>y)mh+=p;else if(x===y)md+=p;else ma+=p;
         if(x+y<=2)under25+=p;
@@ -651,7 +658,7 @@ function logFactorial(n) {
   var s=0; for(var i=2;i<=n;i++) s+=Math.log(i); return s;
 }
 function poissonMatrix(lambdaH, lambdaA) {
-  var MAX=6, matrix=[], totalP=0;
+  var MAX=9, matrix=[], totalP=0;
   for(var h=0; h<MAX; h++){
     matrix[h]=[];
     for(var a=0; a<MAX; a++){
