@@ -30,6 +30,12 @@ assert.match(html, /rel="manifest" href="\.\/manifest\.webmanifest"/);
 assert.match(html, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
 assert.match(html, /id="oddsAppFrame"/, "GitHub Pages should retain its PWA origin and embed Apps Script");
 assert.doesNotMatch(html, /window\.location\.replace\(GAS_URL\)/, "GitHub Pages must not redirect away from the installable origin");
+const hostGuard = html.match(/&&\/(.*?)\/i\.test\(window\.location\.hostname\)/);
+assert.ok(hostGuard, "PWA wrapper should have a GitHub Pages host guard");
+const githubHostPattern = new RegExp(hostGuard[1], "i");
+assert.ok(githubHostPattern.test("widgerestimable93.github.io"), "PWA wrapper must match GitHub Pages hostname");
+assert.ok(!githubHostPattern.test("script.google.com"), "PWA wrapper must not intercept Apps Script itself");
+assert.doesNotMatch(html, /71\.8%|xA · PPDA · Elo|Expected Value Scanner/, "remove unsupported metrics and stale feature labels");
 
 const ctx = {};
 vm.runInNewContext(code, ctx, { timeout: 5000 });

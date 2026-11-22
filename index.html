@@ -640,7 +640,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
         <button class="btn-ghost" onclick="guestLogin()">👤 Accès démonstration</button>
       </div>
       <div class="auth-plans">
-        <div class="ap free"><div class="ap-name">Analyste Free</div><div class="ap-feat">5 analyses/jour (limite locale)<br>Dashboard · Estimations Poisson</div></div>
+        <div class="ap free"><div class="ap-name">Analyste Free</div><div class="ap-feat">Analyses gratuites (limite navigateur)<br>Dashboard · Estimations Poisson</div></div>
         <div class="ap gold"><div class="ap-name">⭐ Research Pro 9.99€/m</div><div class="ap-feat">Cotes réelles · Poisson<br>Matrice des scores · Simulation</div></div>
       </div>
     </div>
@@ -675,7 +675,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="ng">Intelligence</div>
       <div class="ni on" onclick="nav('dashboard')" data-p="dashboard"><span class="ni-ico">⊞</span><span class="nl">Match Intelligence</span></div>
       <div class="ni" onclick="nav('predictions')" data-p="predictions"><span class="ni-ico">🎯</span><span class="nl">Prediction Engine</span><span class="ni-bdg p" id="sb-pred">0</span></div>
-      <div class="ni" onclick="nav('scanner')" data-p="scanner"><span class="ni-ico">📊</span><span class="nl">Value Scanner</span><span class="ni-bdg g" id="sb-vb">0</span></div>
+      <div class="ni" onclick="nav('scanner')" data-p="scanner"><span class="ni-ico">📊</span><span class="nl">Comparateur Poisson</span><span class="ni-bdg g" id="sb-vb">0</span></div>
       <div class="ni" onclick="nav('safebets')" data-p="safebets"><span class="ni-ico">🛡</span><span class="nl">Estimations buts</span><span class="ni-bdg o" id="sb-sb">0</span></div>
       <div class="ng" style="margin-top:6px">Research</div>
       <div class="ni" onclick="nav('lab')" data-p="lab"><span class="ni-ico">🔬</span><span class="nl">Outils Poisson</span><span class="ni-bdg p">NEW</span></div>
@@ -722,12 +722,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="kpi-row">
         <div class="kpi c"><div class="kpi-ico">⚽</div><div class="kpi-lbl">Matchs Analysés</div><div class="kpi-val" id="k-m">–</div><div class="kpi-sub">modèle Poisson calibré aux cotes</div></div>
         <div class="kpi p"><div class="kpi-ico">🎯</div><div class="kpi-lbl">Prédictions Actives</div><div class="kpi-val" id="k-p">–</div><div class="kpi-sub">Confiance ≥60%</div></div>
-        <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Écarts modèle / marché</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">Expected Value</div></div>
+        <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Écarts modèle / marché</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">EV théorique</div></div>
         <div class="kpi o"><div class="kpi-ico">🛡</div><div class="kpi-lbl">Forecasts Stables</div><div class="kpi-val" id="k-s">–</div><div class="kpi-sub">Stabilité ≥75%</div></div>
         <div class="kpi r"><div class="kpi-ico">⚠</div><div class="kpi-lbl">Alertes Risque</div><div class="kpi-val" id="k-t">–</div><div class="kpi-sub">Anomalies ML</div></div>
       </div>
       <div class="sec"><div class="sh"><div class="st">🤖 Top Prédictions Poisson <span class="sc" id="ct-tp">0</span></div><span class="sm" onclick="nav('predictions')">Prediction Engine →</span></div><div class="mg" id="g-tp"></div></div>
-      <div class="sec"><div class="sh"><div class="st">📊 Opportunités xEV <span class="sc" id="ct-vb">0</span></div><span class="sm" onclick="nav('scanner')">Value Scanner →</span></div><div class="mg" id="g-vb"></div></div>
+      <div class="sec"><div class="sh"><div class="st">📊 Écarts modèle / marché <span class="sc" id="ct-vb">0</span></div><span class="sm" onclick="nav('scanner')">Comparateur →</span></div><div class="mg" id="g-vb"></div></div>
       <div class="sec"><div class="sh"><div class="st">🛡 Probabilités buts <span class="sc" id="ct-sb">0</span></div><span class="sm" onclick="nav('safebets')">Voir tout →</span></div><div class="sb-list" id="g-sb"></div></div>
       <div class="sec"><div class="sh"><div class="st">🗂 Tous les matchs <span class="sc" id="ct-all">0</span></div></div><div class="mg" id="g-all"></div></div>
     </div>
@@ -744,8 +744,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     <div id="scannerPage" class="page">
       <div id="scanGate"></div>
       <div id="scanCont">
-        <div class="sec"><div class="sh"><div class="st">📊 Écart modèle / marché <span class="sc" id="ct-scan">0</span></div></div>
-        <div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>EV théorique</th><th>Score Prédit</th><th>Issue</th><th>Sources</th><th>Cote</th><th>Poisson vs marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
+        <div class="sec"><div class="sh"><div class="st">📊 Écart de valeur théorique <span class="sc" id="ct-scan">0</span></div></div>
+        <div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>EV théorique</th><th>Score probable</th><th>Issue</th><th>Sources</th><th>Cote</th><th>Modèle vs marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
       </div>
     </div>
 
@@ -836,7 +836,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
           <div class="plan-name">Analyste Free</div>
           <div class="plan-price" style="color:var(--t2)">0 <small>€/mois</small></div>
           <ul class="plan-feats">
-            <li class="yes">5 analyses/jour</li>
+            <li class="yes">Analyses gratuites (limite navigateur)</li>
             <li class="yes">Dashboard Match Intelligence</li>
             <li class="yes">Prédictions Poisson de base</li>
             <li class="no">Prediction Engine complet</li>
@@ -853,11 +853,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
           <ul class="plan-feats">
             <li class="yes">Analyses illimitées</li>
             <li class="yes">Dashboard complet</li>
-            <li class="yes"><strong>Poisson Engine + Matrice 6×6</strong></li>
-            <li class="yes"><strong>Monte Carlo 10K simulations</strong></li>
+            <li class="yes"><strong>Modèle Poisson + matrice de scores</strong></li>
+            <li class="yes"><strong>Simulation Monte Carlo</strong></li>
             <li class="yes"><strong>Matrice Poisson des scores</strong></li>
             <li class="yes"><strong>Outils Poisson complet</strong></li>
-            <li class="yes"><strong>xG · xA · PPDA · Elo</strong></li>
+            <li class="yes"><strong>Buts attendus estimés depuis les cotes</strong></li>
           </ul>
           <button class="plan-btn upg" onclick="openPP()" id="upgBtn">Passer Research Pro →</button>
         </div>
@@ -1159,7 +1159,7 @@ function renderPredPage(){
 
 function renderScanPage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("scanGate").innerHTML=mkGate("Expected Value Scanner","Compare les probabilités Poisson calibrées aux cotes. Signal indicatif, non backtesté.",["Cotes réelles","Poisson calibré","Précision non mesurée"]);$("scanCont").style.display="none";return;}
+  if(!isPrem){$("scanGate").innerHTML=mkGate("Comparateur Poisson","Compare les probabilités Poisson calibrées aux cotes. Signal indicatif, non backtesté.",["Cotes réelles","Poisson calibré","Précision non mesurée"]);$("scanCont").style.display="none";return;}
   $("scanGate").innerHTML="";$("scanCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]);
@@ -1288,6 +1288,11 @@ function showLabModule(mod){
       +'<div class="sim-field"><div class="sim-label">Simulations</div><input class="sim-input" id="simN" type="number" value="10000" step="1000" min="1000" max="50000"></div>'
       +'<button class="sim-btn" onclick="runSimulation()">▶ Simuler</button>'
       +'</div></div><div id="simResult"></div></div>';
+  } else if(mod==="dataset"){
+    var rows=(S.data&&S.data.allMatches||[]).slice(0,30);
+    c.innerHTML='<div class="sec"><div class="sh"><div class="st">Cotes reçues de The Odds API · '+rows.length+' matchs affichés</div></div><div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>Cote 1</th><th>Cote N</th><th>Cote 2</th><th>Bookmakers</th></tr></thead><tbody>'+rows.map(function(m){return'<tr><td>'+esc(m.home)+' – '+esc(m.away)+'</td><td>'+(m.odds.h||'–')+'</td><td>'+(m.odds.d||'–')+'</td><td>'+(m.odds.a||'–')+'</td><td>'+(m.bookCount||0)+'</td></tr>';}).join('')+'</tbody></table></div></div>';
+  } else if(mod==="features"||mod==="models"){
+    c.innerHTML='<div class="rc info"><div class="rc-title">Modèle Poisson calibré aux cotes</div><div class="rc-body">Le calcul utilise les meilleures cotes 1X2 disponibles et normalise leurs probabilités implicites pour retirer la marge. Il cherche ensuite les taux de buts domicile et extérieur qui s’en rapprochent. Les cotes over/under 2,5 contribuent au réglage lorsqu’elles existent. Les taux obtenus sont des buts attendus estimés depuis le marché, pas des xG issus d’événements de tirs. Aucun historique de résultats n’est disponible pour mesurer précision ou rendement.</div></div>';
   } else {
     c.innerHTML='<div class="rc info"><div class="rc-title">Module non disponible</div><div class="rc-body">Cette fonction n’est pas encore implémentée. Le projet ne dispose pas d’historique de résultats pour le backtest, ni de données SHAP, de classement officiel ou de score Elo. Les estimations actives utilisent les cotes et le modèle Poisson.</div></div>';
   }
@@ -1397,7 +1402,7 @@ function loadAdmin(){
     get("?action=admin_users",function(r2){
       hideLoader();if(!r2.ok)return;
       $("adm-users").innerHTML=(r2.data||[]).map(function(u){
-        return'<tr><td>'+u.email+'</td><td>'+u.name+'</td>'
+        return'<tr><td>'+esc(u.email)+'</td><td>'+esc(u.name)+'</td>'
           +'<td><span class="plan-sm '+(u.plan||"free")+'">'+(u.plan||"free")+'</span></td>'
           +'<td style="font-family:var(--fd);font-size:9px;color:var(--t3)">'+(u.created?u.created.split("T")[0]:"–")+'</td>'
           +'<td style="font-family:var(--fd);font-size:9px;color:var(--t3)">'+(u.lastLogin?u.lastLogin.split("T")[0]:"–")+'</td>'
@@ -1456,7 +1461,7 @@ function hasAppsScriptBridge(){
 function redirectToAppsScript(){
   // GitHub Pages is the installable PWA shell. Keep its origin and load the
   // Apps Script app in an iframe so google.script.run works without CORS fetches.
-  if(!hasAppsScriptBridge()&&/\\.github\\.io$/i.test(window.location.hostname)){
+  if(!hasAppsScriptBridge()&&/\.github\.io$/i.test(window.location.hostname)){
     document.title="OddsLab Intelligence";
     document.body.innerHTML='<main id="pwaShell" style="position:fixed;inset:0;background:#040608;color:#dce8f5;font:14px Arial,sans-serif"><div id="pwaLoading" style="position:absolute;z-index:2;inset:0;display:grid;place-content:center;text-align:center;background:#040608"><div style="font-size:24px;margin-bottom:12px">⚡ OddsLab</div><div>Connexion à la plateforme…</div></div><iframe id="oddsAppFrame" title="OddsLab Intelligence" src="'+GAS_URL+'" style="display:block;width:100%;height:100%;border:0" allow="clipboard-read; clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe></main>';
     var frame=document.getElementById("oddsAppFrame");
@@ -1499,6 +1504,7 @@ function $(id){return document.getElementById(id);}
 function val(id){var el=$(id);return el?el.value.trim():"";}
 function tryJ(s){try{return JSON.parse(s);}catch(e){return null;}}
 function hs2(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h=h&h;}return Math.abs(h);}
+function esc(value){return String(value==null?"":value).replace(/[&<>"']/g,function(ch){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch];});}
 </script>
 <script>
 if ("serviceWorker" in navigator) {
