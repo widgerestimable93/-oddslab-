@@ -42,6 +42,6 @@ Le workflow `.github/workflows/build-apk.yml` crée un APK uniquement lorsque le
 ## Limites à régler avant un lancement commercial
 
 - Les cotes de 25 compétitions sont interrogées avec les marchés `h2h` et `totals`; surveillez le quota The Odds API.
-- Les limites free/premium affichées dans l’interface ne sont pas encore appliquées comme quotas et droits serveur robustes; le stockage local du navigateur peut être modifié. Ne lancez pas de vente de forfaits avant d’avoir terminé ce contrôle d’accès.
-- L’activation PayPal est vérifiée côté serveur, mais la synchronisation des suspensions et annulations doit encore être reliée aux notifications PayPal ou à un contrôle périodique.
+- Les routes scanner et marchés de buts vérifient le forfait depuis le serveur; l’interface ne peut pas accorder premium en changeant le stockage local. La limite « 5 analyses/jour » reste locale au navigateur et n’est pas un quota serveur robuste; ne la présentez pas comme une protection anti-abus.
+- L’activation PayPal est vérifiée côté serveur, et le forfait actif est revérifié à l’usage (état mis en cache 5 minutes). Il reste à ajouter une notification PayPal pour une révocation immédiate, ainsi qu’un processus de remboursement/annulation.
 - Les pages backtest, attribution SHAP, Elo et classements ne sont pas implémentées faute de sources dédiées. Elles sont maintenant signalées comme indisponibles au lieu d’afficher des chiffres fictifs.
