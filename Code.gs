@@ -139,7 +139,7 @@ function getAuthorizedUser_(p) {
     var row=rows[i];
     if(String(row[0])===userId&&String(row[1]||"").toLowerCase()===email){
       if(row[8]===true||row[8]==="TRUE") throw new Error("Compte désactivé.");
-      if(!safeEqual_(String(p.token),tok(email,String(row[2]||"")))) throw new Error("Session invalide. Reconnectez-vous.");
+      if(!safeEqual_(String(p.token),tok_(email,String(row[2]||"")))) throw new Error("Session invalide. Reconnectez-vous.");
       var plan=row[4]||"free";
       if(plan==="premium"){
         var subId=String(row[5]||"");
@@ -242,17 +242,17 @@ function authSecret_() {
   if(!secret){secret=Utilities.getUuid()+Utilities.getUuid();props.setProperty("ODDSLAB_AUTH_SECRET",secret);}
   return secret;
 }
-function tok(e,h) {
+function tok_(e,h) {
   return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(String(e)+"\\n"+String(h),authSecret())).replace(/=+$/,"");
 }
 function requireAdmin_(token) {
   var email=getSecret_("ADMIN_EMAIL").toLowerCase(), pass=getSecret_("ADMIN_PASS");
   if(!email||!pass||!token) throw new Error("Action réservée à l'administrateur.");
-  var expected=tok(email,md5(pass));
+  var expected=tok_(email,md5(pass));
   if(String(token)!==expected) throw new Error("Session administrateur invalide. Reconnectez-vous.");
   return true;
 }
-function slog(id,a,d) { try{getSheet_(CFG.SHEETS.logs).appendRow([new Date().toISOString(),id,a,d||""]);}catch(e){} }
+function slog_(id,a,d) { try{getSheet_(CFG.SHEETS.logs).appendRow([new Date().toISOString(),id,a,d||""]);}catch(e){} }
 
 // ══════════════════════════════════════════════════════════════════
 //  AUTH
@@ -300,7 +300,7 @@ function loginUser(email, password) {
   var adminEmail=getSecret_("ADMIN_EMAIL").trim().toLowerCase(), adminPass=getSecret_("ADMIN_PASS");
   if(adminEmail&&adminPass&&email===adminEmail&&safeEqual_(password,adminPass)){
     clearAuthFailures_(email);
-    return {user:{id:"admin",email:adminEmail,name:"Admin",plan:"admin"},token:tok(email,md5(password))};
+    return {user:{id:"admin",email:adminEmail,name:"Admin",plan:"admin"},token:tok_(email,md5(password))};
   }
   var sh=getSheet_(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++){
@@ -314,8 +314,8 @@ function loginUser(email, password) {
       }
       sh.getRange(i+1,8).setValue(new Date().toISOString());
       clearAuthFailures_(email);
-      slog(row[0],"login","");
-      return {user:{id:row[0],email:row[1],name:row[3],plan:row[4]||"free"},token:tok(email,currentHash)};
+      slog_(row[0],"login","");
+      return {user:{id:row[0],email:row[1],name:row[3],plan:row[4]||"free"},token:tok_(email,currentHash)};
     }
   }
   recordAuthFailure_(email);
@@ -336,8 +336,8 @@ function registerUser(email, password, name) {
     for(var i=1;i<rows.length;i++) if(String(rows[i][1]||"").trim().toLowerCase()===email) throw new Error("Email déjà utilisé");
     var id=uid(), now=new Date().toISOString(), hash=makePasswordHash_(password);
     sh.appendRow([id,email,hash,name,"free","",now,now,false]);
-    slog(id,"register","");
-    return {user:{id:id,email:email,name:name,plan:"free"},token:tok(email,hash)};
+    slog_(id,"register","");
+    return {user:{id:id,email:email,name:name,plan:"free"},token:tok_(email,hash)};
   } finally {
     lock.releaseLock();
   }
@@ -404,7 +404,7 @@ function paypalSuccess_(subId, email) {
       if(rows[i][5]===subId&&rows[i][4]==="premium") return {upgraded:true,plan:"premium",verified:true};
       sh.getRange(i+1,5).setValue("premium");
       sh.getRange(i+1,6).setValue(subId);
-      slog(rows[i][0],"upgrade","PayPal verified:"+verified.status);
+      slog_(rows[i][0],"upgrade","PayPal verified:"+verified.status);
       return {upgraded:true,plan:"premium",verified:true};
     }
   }
