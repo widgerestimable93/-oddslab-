@@ -1024,6 +1024,11 @@ function fetchData(silent){
     $("rfIco").className="";$("rfTxt").textContent="Actualiser";
     if(!r.ok){if(!silent)toast("Erreur: "+(r.error||"connexion"),"err");return;}
     S.data=r.data;
+    if(S.user&&r.data.accountPlan){
+      S.user.plan=r.data.accountPlan;
+      saveSess({user:S.user,token:S.token});
+      updateUserUI();
+    }
     var all=S.data.allMatches||[];
     var predCount=all.filter(function(m){return m.prediction&&m.prediction.pct>=10;}).length;
     $("sb-pred").textContent=predCount;
