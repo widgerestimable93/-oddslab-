@@ -896,7 +896,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
 </div>
 <script>
 var GAS_URL="https://script.google.com/macros/s/AKfycbxvAPGPp3uUBKkO0n_auHCLJXHxFYeetbSR92RFh9V-cU3r0ekAXaHWp-xkA9IIZwll/exec";
-var PP_CLIENT="YOUR_PAYPAL_CLIENT_ID";
+var PP_CLIENT="";
 var REFRESH=300000;
 var S={user:null,token:null,data:null,page:"dashboard",league:null,ticket:[],timer:null,prevPage:"dashboard"};
 var LEAGUES=[
@@ -1443,33 +1443,45 @@ function loadAdmin(){
     });
   });
 }
-function admTog(uid,dis){post({action:"admin_disable",userId:uid,disabled:dis},function(r){if(r.ok){toast(dis?"Désactivé":"Réactivé","ok");loadAdmin();}else toast("Erreur","err");});}
+function admTog(uid,dis){post({action:"admin_disable",userId:uid,disabled:dis,token:S.token},function(r){if(r.ok){toast(dis?"Désactivé":"Réactivé","ok");loadAdmin();}else toast(r.error||"Erreur","err");});}
 
 function loadPP(){
-  if(document.getElementById("pp-sdk"))return;
-  var s=document.createElement("script");s.id="pp-sdk";
-  s.src="https://www.paypal.com/sdk/js?client-id="+PP_CLIENT+"&vault=true&intent=subscription&currency=EUR";
-  s.onload=function(){initPP();};document.head.appendChild(s);
+  if(document.getElementById("pp-sdk")||S.paypalLoading)return;
+  S.paypalLoading=true;
+  get("?action=public_config",function(r){
+    S.paypalLoading=false;
+    if(!r.ok||!r.data||!r.data.paypalEnabled){
+      toast("Paiement indisponible : PayPal n'est pas configuré côté serveur.","warn");
+      return;
+    }
+    S.paypalPlanId=r.data.paypalPlanId;
+    var s=document.createElement("script");s.id="pp-sdk";
+    s.src="https://www.paypal.com/sdk/js?client-id="+encodeURIComponent(r.data.paypalClientId)+"&vault=true&intent=subscription&currency=EUR";
+    s.onload=function(){initPP();};
+    s.onerror=function(){toast("Le service PayPal ne répond pas.","err");};
+    document.head.appendChild(s);
+  });
 }
 function initPP(){
-  if(!window.paypal)return;
+  if(!window.paypal||!S.paypalPlanId)return;
   ["pp-c","pp-c2"].forEach(function(cid){
     var el=document.getElementById(cid);if(!el||el.children.length)return;
     try{paypal.Buttons({
       style:{shape:"pill",color:"gold",layout:"vertical",label:"subscribe"},
-      createSubscription:function(data,actions){return actions.subscription.create({plan_id:"YOUR_PAYPAL_PLAN_ID"});},
+      createSubscription:function(data,actions){return actions.subscription.create({plan_id:S.paypalPlanId});},
       onApprove:function(data){
-        loader("Activation Research Pro...");
+        loader("Vérification de l'abonnement PayPal...");
         post({action:"paypal_success",subscriptionId:data.subscriptionID,email:S.user&&S.user.email},function(r){
           hideLoader();
-          if(r.ok){S.user.plan="premium";saveSess({user:S.user,token:S.token});updateUserUI();closePP();toast("🎉 Research Pro activé !","ok");fetchData();}
-          else toast("Erreur PayPal","err");
+          if(r.ok&&r.data&&r.data.verified){S.user.plan="premium";saveSess({user:S.user,token:S.token});updateUserUI();closePP();toast("Abonnement PayPal vérifié et activé.","ok");fetchData();}
+          else toast(r.error||"PayPal n'a pas confirmé l'abonnement.","err");
         });
       },
-      onError:function(e){console.error("PP:",e);toast("Erreur PayPal","err");}
-    }).render("#"+cid);}catch(e){console.log("PP err",e);}
+      onError:function(e){console.error("PayPal:",e);toast("Erreur PayPal","err");}
+    }).render("#"+cid);}catch(e){console.log("PayPal error:",e);}
   });
 }
+
 function openPP(){if(S.user&&(S.user.plan==="premium"||S.user.plan==="admin")){toast("Déjà Research Pro !","ok");return;}$("ppModal").classList.remove("gone");if(!window.paypal)loadPP();}
 function closePP(){$("ppModal").classList.add("gone");}
 
@@ -1493,6 +1505,7 @@ function get(p,cb){
   if(hasAppsScriptBridge()){
     var params={};
     new URLSearchParams((p||"").replace(/^\?/,"")).forEach(function(v,k){params[k]=v;});
+    if(S.user&&S.user.plan==="admin"&&S.token)params.token=S.token;
     google.script.run
       .withSuccessHandler(function(data){cb({ok:true,data:data,ts:Date.now(),v:"6.1.0"});})
       .withFailureHandler(function(err){cb({ok:false,error:err&&err.message||String(err)});})
@@ -1502,6 +1515,7 @@ function get(p,cb){
   fetch(GAS_URL+p).then(function(r){return r.json();}).then(function(d){cb(d);}).catch(function(e){cb({ok:false,error:e.toString()});});
 }
 function post(b,cb){
+  if(S.user&&S.user.plan==="admin"&&S.token&&!b.token)b.token=S.token;
   if(hasAppsScriptBridge()){
     google.script.run
       .withSuccessHandler(function(data){cb({ok:true,data:data});})
