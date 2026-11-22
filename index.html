@@ -728,7 +728,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       </div>
       <div class="sec"><div class="sh"><div class="st">🤖 Top Prédictions Poisson <span class="sc" id="ct-tp">0</span></div><span class="sm" onclick="nav('predictions')">Prediction Engine →</span></div><div class="mg" id="g-tp"></div></div>
       <div class="sec"><div class="sh"><div class="st">📊 Opportunités xEV <span class="sc" id="ct-vb">0</span></div><span class="sm" onclick="nav('scanner')">Value Scanner →</span></div><div class="mg" id="g-vb"></div></div>
-      <div class="sec"><div class="sh"><div class="st">🛡 AI Forecasts <span class="sc" id="ct-sb">0</span></div><span class="sm" onclick="nav('safebets')">Voir tout →</span></div><div class="sb-list" id="g-sb"></div></div>
+      <div class="sec"><div class="sh"><div class="st">🛡 Probabilités buts <span class="sc" id="ct-sb">0</span></div><span class="sm" onclick="nav('safebets')">Voir tout →</span></div><div class="sb-list" id="g-sb"></div></div>
       <div class="sec"><div class="sh"><div class="st">🗂 Tous les matchs <span class="sc" id="ct-all">0</span></div></div><div class="mg" id="g-all"></div></div>
     </div>
 
@@ -745,7 +745,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div id="scanGate"></div>
       <div id="scanCont">
         <div class="sec"><div class="sh"><div class="st">📊 Écart modèle / marché <span class="sc" id="ct-scan">0</span></div></div>
-        <div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>EV théorique</th><th>Score Prédit</th><th>Issue</th><th>Sources</th><th>Cote</th><th>ML vs Marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
+        <div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>EV théorique</th><th>Score Prédit</th><th>Issue</th><th>Sources</th><th>Cote</th><th>Poisson vs marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
       </div>
     </div>
 
@@ -753,7 +753,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     <div id="safebetsPage" class="page">
       <div id="safeGate"></div>
       <div id="safeCont" style="display:none">
-        <div class="sec"><div class="sh"><div class="st">🛡 AI Forecasts — Probabilités Calibrées <span class="sc" id="ct-safe">0</span></div></div><div class="sb-list" id="safe-list"></div></div>
+        <div class="sec"><div class="sh"><div class="st">🛡 Probabilités de buts — modèle Poisson <span class="sc" id="ct-safe">0</span></div></div><div class="sb-list" id="safe-list"></div></div>
       </div>
     </div>
 
@@ -1084,7 +1084,6 @@ function mkCard(m){
   var dt=m.time?new Date(m.time):null;
   var tStr=dt?dt.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"–";
   var dStr=dt?dt.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"}):"";
-  var elo={home:1480+hs2(m.home||"")%200,away:1450+hs2(m.away||"")%200};
 
   var oddsHtml='<div class="mc-odds">'
     +'<div class="mc-odd'+(v.best==="h"?" best":"")+'"><div class="mc-odd-l">DOM</div><div class="mc-odd-v">'+(m.odds&&m.odds.h>0?m.odds.h:"–")+'</div></div>'
@@ -1099,7 +1098,7 @@ function mkCard(m){
     +(pred.pct?'<div class="pred-sep"></div>':"")
     +'<div class="pred-xg">xG: <b>'+((xg.home||0).toFixed(1))+'</b> — <b>'+((xg.away||0).toFixed(1))+'</b></div>'
     +'<div class="pred-tags">'
-    +(v.detected?'<span class="chip vb">xEV+'+v.pct+'%</span>':"")
+    +(v.detected?'<span class="chip vb">EV théorique +'+v.pct+'%</span>':"")
     +(m.trap&&m.trap.detected?'<span class="chip trap">⚠ RISK</span>':"")
     +(m.safeBets&&m.safeBets.length?'<span class="chip safe-c">🛡 STABLE</span>':"")
     +'</div></div>';
@@ -1108,7 +1107,7 @@ function mkCard(m){
     +'<span class="chip '+(aiCls==="safe"?"high-conf":aiCls==="good"?"med-conf":"low-conf")+'">'+ai.score+'/100</span>'
     +(probs.over25>=0.5?'<span class="chip poi">O2.5 '+Math.round((probs.over25||0)*100)+'%</span>':"")
     +(probs.btts>=0.55?'<span class="chip xg">BTTS '+Math.round((probs.btts||0)*100)+'%</span>':"")
-    +'<span class="chip elo">Elo '+elo.home+'</span>'
+
     +'</div>';
 
   return '<div class="mc '+confCls+'" onclick="openCard(\''+m.id+'\')">'
@@ -1187,7 +1186,7 @@ function renderScanPage(){
 
 function renderSafePage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("safeGate").innerHTML=mkGate("AI Forecasts","Probabilités calibrées via xG + Poisson.",["Over 1.5/2.5 Poisson","BTTS calibré","Risk assessment"]);$("safeCont").style.display="none";return;}
+  if(!isPrem){$("safeGate").innerHTML=mkGate("Probabilités de buts","Probabilités calibrées via xG + Poisson.",["Over 1.5/2.5 Poisson","Probabilités over/under","Signal de risque modèle"]);$("safeCont").style.display="none";return;}
   $("safeGate").innerHTML="";$("safeCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]),flat=[];
@@ -1357,7 +1356,7 @@ function renderTicket(){
       +'<div style="font-size:9px;color:var(--t3);margin-top:2px">'+(m.league||"")+(pred.home!==undefined?" · "+pred.home+"-"+pred.away:"")+'</div>'
       +'<div style="font-size:9px;margin-top:2px;display:flex;gap:6px">'
       +'<span style="color:var(--g)">→ '+lbl+' @ '+odd+'</span>'
-      +'<span style="font-family:var(--fd);color:var(--t3)">ML: '+ai.score+'/100</span>'
+      +'<span style="font-family:var(--fd);color:var(--t3)">Modèle: '+ai.score+'/100</span>'
       +'</div></div>'
       +'<button onclick="togPick(\''+m.id+'\',\''+lbl+'\','+odd+')" style="background:'+(inT?"var(--rd1)":"var(--cd1)")
       +';border:1px solid '+(inT?"rgba(255,45,85,.25)":"var(--cd2)")
