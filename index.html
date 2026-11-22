@@ -634,7 +634,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div id="regF" style="display:none">
         <div class="auth-field"><label class="auth-label">Nom</label><input class="auth-input" type="text" id="rNm" placeholder="Votre nom"></div>
         <div class="auth-field"><label class="auth-label">Email</label><input class="auth-input" type="email" id="rEm" placeholder="vous@email.com"></div>
-        <div class="auth-field"><label class="auth-label">Mot de passe</label><input class="auth-input" type="password" id="rPw" placeholder="•••••• (6 min)" onkeydown="if(event.key==='Enter')doReg()"></div>
+        <div class="auth-field"><label class="auth-label">Mot de passe</label><input class="auth-input" type="password" id="rPw" placeholder="10 caractères minimum" onkeydown="if(event.key==='Enter')doReg()"></div>
         <button class="btn-primary" onclick="doReg()">Créer mon accès →</button>
         <div class="auth-sep">ou</div>
         <button class="btn-ghost" onclick="guestLogin()">👤 Accès démonstration</button>
@@ -970,7 +970,7 @@ function doLogin(){
 function doReg(){
   var nm=val("rNm"),em=val("rEm"),pw=val("rPw");
   if(!em||!pw)return showAErr("Email et mot de passe requis");
-  if(pw.length<6)return showAErr("Mot de passe trop court");
+  if(pw.length<10)return showAErr("Mot de passe trop court (10 caractères minimum)");
   loader("Création du compte...");
   post({action:"register",email:em,password:pw,name:nm},function(r){hideLoader();if(r.ok){saveSess(r.data);bootApp();}else showAErr(r.error||"Erreur");});
 }
