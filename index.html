@@ -1466,7 +1466,7 @@ function get(p,cb){
   if(hasAppsScriptBridge()){
     var params={};
     new URLSearchParams((p||"").replace(/^\?/,"")).forEach(function(v,k){params[k]=v;});
-    if(S.user&&S.user.plan==="admin"&&S.token)params.token=S.token;
+    if(S.user){params.userId=S.user.id||"";params.userEmail=S.user.email||"";if(S.token)params.token=S.token;}
     google.script.run
       .withSuccessHandler(function(data){cb({ok:true,data:data,ts:Date.now(),v:"6.1.0"});})
       .withFailureHandler(function(err){cb({ok:false,error:err&&err.message||String(err)});})
@@ -1476,7 +1476,7 @@ function get(p,cb){
   fetch(GAS_URL+p).then(function(r){return r.json();}).then(function(d){cb(d);}).catch(function(e){cb({ok:false,error:e.toString()});});
 }
 function post(b,cb){
-  if(S.user&&S.user.plan==="admin"&&S.token&&!b.token)b.token=S.token;
+  if(S.user){b.userId=S.user.id||"";b.userEmail=S.user.email||"";if(S.token&&!b.token)b.token=S.token;}
   if(hasAppsScriptBridge()){
     google.script.run
       .withSuccessHandler(function(data){cb({ok:true,data:data});})
