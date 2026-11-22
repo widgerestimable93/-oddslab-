@@ -180,8 +180,9 @@ function matchesForUser_(matches,user) {
 }
 
 function dashboardForUser_(dashboard,user) {
-  if(user&&(user.plan==="premium"||user.plan==="admin")) return dashboard;
+  if(user&&(user.plan==="premium"||user.plan==="admin")) {dashboard.accountPlan=user.plan;return dashboard;}
   dashboard=JSON.parse(JSON.stringify(dashboard));
+  dashboard.accountPlan=user&&user.plan||"free";
   dashboard.valueBets=0; dashboard.traps=0; dashboard.safeBetsCount=0; dashboard.avgROI=0;
   dashboard.topValueBets=[]; dashboard.topSafeBets=[];
   dashboard.allMatches=matchesForUser_(dashboard.allMatches||[],user);
