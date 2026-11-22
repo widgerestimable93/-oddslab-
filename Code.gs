@@ -756,35 +756,21 @@ function detectTrap(raw, odds, probs) {
 // ══════════════════════════════════════════════════════════════════
 function computeSafeBets(odds, xg, probs, lg) {
   var safe=[], totalXG=xg.home+xg.away;
-
-  if(probs.over15>=0.68&&(odds.over15>1.05)){
+  // Seuls les marchés fournis réellement par The Odds API sont affichés.
+  if(probs.over15>=0.68&&odds.over15>1.05){
     safe.push({type:"OVER_1_5",label:"Over 1.5 buts",icon:"⚽",
-      confidence:Math.round(probs.over15*100),odds:odds.over15||r2(1.3+probs.over15*0.5),
+      confidence:Math.round(probs.over15*100),odds:odds.over15,
       risk:probs.over15>=0.82?"LOW":"MEDIUM",
-      desc:"xG total: "+totalXG+" | Poisson: "+Math.round(probs.over15*100)+"%"});
+      desc:"xG modèle total: "+totalXG+" | Probabilité Poisson: "+Math.round(probs.over15*100)+"%"});
   }
-  if(probs.over25>=0.54&&(odds.over25>1.20)){
+  if(probs.over25>=0.54&&odds.over25>1.20){
     safe.push({type:"OVER_2_5",label:"Over 2.5 buts",icon:"🔥",
-      confidence:Math.round(probs.over25*100),odds:odds.over25||r2(1.6+probs.over25*0.8),
+      confidence:Math.round(probs.over25*100),odds:odds.over25,
       risk:probs.over25>=0.65?"LOW":"MEDIUM",
-      desc:"xG dom:"+xg.home+" ext:"+xg.away+" | Moy ligue: "+(lg.avgGoals||"—")});
-  }
-  if(probs.btts>=0.58){
-    var bttsO=odds.over15>0?r2(odds.over15*1.05+0.2):r2(1.5+probs.btts*0.8);
-    safe.push({type:"BTTS",label:"Les deux marquent",icon:"🥅",
-      confidence:Math.round(probs.btts*100),odds:bttsO,
-      risk:probs.btts>=0.70?"LOW":"MEDIUM",
-      desc:"xG dom:"+xg.home+" ext:"+xg.away});
-  }
-  var dc1x=probs.h+(probs.d||0);
-  if(dc1x>=0.72){
-    safe.push({type:"DC_1X",label:"Double chance 1X",icon:"🎯",
-      confidence:Math.round(dc1x*100),odds:odds.h>0?r2(Math.max(1.08,odds.h*0.42+1.05)):1.30,
-      risk:dc1x>=0.84?"LOW":"MEDIUM",desc:"Dom ou Nul | "+Math.round(dc1x*100)+"%"});
+      desc:"xG modèle domicile: "+xg.home+" extérieur: "+xg.away+" | Probabilité Poisson: "+Math.round(probs.over25*100)+"%"});
   }
   return safe;
 }
-
 function riskLevel(ai, trap) {
   if(trap.detected&&trap.sev==="HIGH") return "HIGH";
   if(ai.score>=80&&!trap.detected) return "LOW";
@@ -804,16 +790,8 @@ function getMatchAnalysis(matchId) {
   // Appel Gemini pour le verdict IA
   var gemini = geminiAnalyze(m);
 
-  // H2H simulé déterministe (pas de démo, mais pas d'API H2H gratuite)
-  var seed = hs((m.home||"")+(m.away||""));
-  var h2h = {
-    homeWins: 1+(seed%4),
-    draws:    1+((seed*7)%3),
-    awayWins: 1+((seed*3)%3),
-    note: "H2H basé sur l'historique estimé (API Football requis pour données réelles)"
-  };
-
-  return { match:m, gemini:gemini, h2h:h2h };
+  // Aucun historique H2H n'est fourni par la source de cotes utilisée.
+  return { match:m, gemini:gemini, h2h:{available:false,note:"Historique direct indisponible : aucune source H2H connectée."} };
 }
 
 // ══════════════════════════════════════════════════════════════════
