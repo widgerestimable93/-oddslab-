@@ -615,8 +615,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
           <span class="auth-badge ai">Cotes marché</span>
           <span class="auth-badge ds">Poisson Engine</span>
           <span class="auth-badge ml">Monte Carlo</span>
-          <span class="auth-badge ai">Bayesian</span>
-          <span class="auth-badge ds">SHAP</span>
+          <span class="auth-badge ai">Poisson</span>
+          <span class="auth-badge ds">Marché</span>
         </div>
       </div>
       <div id="authErr" class="auth-err"></div>
@@ -640,8 +640,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
         <button class="btn-ghost" onclick="guestLogin()">👤 Accès démonstration</button>
       </div>
       <div class="auth-plans">
-        <div class="ap free"><div class="ap-name">Analyste Free</div><div class="ap-feat">5 analyses/jour<br>Dashboard · Prédictions de base</div></div>
-        <div class="ap gold"><div class="ap-name">⭐ Research Pro 9.99€/m</div><div class="ap-feat">Poisson · xG · Monte Carlo<br>SHAP · Feature Importance · Lab</div></div>
+        <div class="ap free"><div class="ap-name">Analyste Free</div><div class="ap-feat">5 analyses/jour (limite locale)<br>Dashboard · Estimations Poisson</div></div>
+        <div class="ap gold"><div class="ap-name">⭐ Research Pro 9.99€/m</div><div class="ap-feat">Cotes réelles · Poisson<br>Matrice des scores · Simulation</div></div>
       </div>
     </div>
   </div>
@@ -661,7 +661,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   <div class="modal-box">
     <button class="modal-close" onclick="closePP()">✕</button>
     <div class="modal-title">⭐ Research Pro</div>
-    <div class="modal-sub">Accès complet au moteur ML — <strong style="color:var(--gold)">9.99€/mois</strong>. Poisson Engine, xG Model, Monte Carlo, SHAP.</div>
+    <div class="modal-sub">Accès aux outils Poisson et aux cotes disponibles — <strong style="color:var(--gold)">9.99€/mois</strong>. Les estimations ne sont pas des garanties.</div>
     <div id="pp-c"></div>
     <div style="margin-top:8px;font-family:var(--fd);font-size:9px;color:var(--t3)">🔒 Paiement sécurisé PayPal · Annulation libre</div>
   </div>
@@ -676,7 +676,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="ni on" onclick="nav('dashboard')" data-p="dashboard"><span class="ni-ico">⊞</span><span class="nl">Match Intelligence</span></div>
       <div class="ni" onclick="nav('predictions')" data-p="predictions"><span class="ni-ico">🎯</span><span class="nl">Prediction Engine</span><span class="ni-bdg p" id="sb-pred">0</span></div>
       <div class="ni" onclick="nav('scanner')" data-p="scanner"><span class="ni-ico">📊</span><span class="nl">Value Scanner</span><span class="ni-bdg g" id="sb-vb">0</span></div>
-      <div class="ni" onclick="nav('safebets')" data-p="safebets"><span class="ni-ico">🛡</span><span class="nl">AI Forecasts</span><span class="ni-bdg o" id="sb-sb">0</span></div>
+      <div class="ni" onclick="nav('safebets')" data-p="safebets"><span class="ni-ico">🛡</span><span class="nl">Estimations buts</span><span class="ni-bdg o" id="sb-sb">0</span></div>
       <div class="ng" style="margin-top:6px">Research</div>
       <div class="ni" onclick="nav('lab')" data-p="lab"><span class="ni-ico">🔬</span><span class="nl">Outils Poisson</span><span class="ni-bdg p">NEW</span></div>
       <div class="ni" onclick="nav('elo')" data-p="elo"><span class="ni-ico">📈</span><span class="nl">Cotes réelles</span></div>
@@ -722,11 +722,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="kpi-row">
         <div class="kpi c"><div class="kpi-ico">⚽</div><div class="kpi-lbl">Matchs Analysés</div><div class="kpi-val" id="k-m">–</div><div class="kpi-sub">modèle Poisson calibré aux cotes</div></div>
         <div class="kpi p"><div class="kpi-ico">🎯</div><div class="kpi-lbl">Prédictions Actives</div><div class="kpi-val" id="k-p">–</div><div class="kpi-sub">Confiance ≥60%</div></div>
-        <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Opportunités xEV</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">Expected Value</div></div>
+        <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Écarts modèle / marché</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">Expected Value</div></div>
         <div class="kpi o"><div class="kpi-ico">🛡</div><div class="kpi-lbl">Forecasts Stables</div><div class="kpi-val" id="k-s">–</div><div class="kpi-sub">Stabilité ≥75%</div></div>
         <div class="kpi r"><div class="kpi-ico">⚠</div><div class="kpi-lbl">Alertes Risque</div><div class="kpi-val" id="k-t">–</div><div class="kpi-sub">Anomalies ML</div></div>
       </div>
-      <div class="sec"><div class="sh"><div class="st">🤖 Top Prédictions ML <span class="sc" id="ct-tp">0</span></div><span class="sm" onclick="nav('predictions')">Prediction Engine →</span></div><div class="mg" id="g-tp"></div></div>
+      <div class="sec"><div class="sh"><div class="st">🤖 Top Prédictions Poisson <span class="sc" id="ct-tp">0</span></div><span class="sm" onclick="nav('predictions')">Prediction Engine →</span></div><div class="mg" id="g-tp"></div></div>
       <div class="sec"><div class="sh"><div class="st">📊 Opportunités xEV <span class="sc" id="ct-vb">0</span></div><span class="sm" onclick="nav('scanner')">Value Scanner →</span></div><div class="mg" id="g-vb"></div></div>
       <div class="sec"><div class="sh"><div class="st">🛡 AI Forecasts <span class="sc" id="ct-sb">0</span></div><span class="sm" onclick="nav('safebets')">Voir tout →</span></div><div class="sb-list" id="g-sb"></div></div>
       <div class="sec"><div class="sh"><div class="st">🗂 Tous les matchs <span class="sc" id="ct-all">0</span></div></div><div class="mg" id="g-all"></div></div>
@@ -744,8 +744,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     <div id="scannerPage" class="page">
       <div id="scanGate"></div>
       <div id="scanCont">
-        <div class="sec"><div class="sh"><div class="st">📊 Expected Value Scanner <span class="sc" id="ct-scan">0</span></div></div>
-        <div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>xEV</th><th>Score Prédit</th><th>Issue</th><th>Sources</th><th>Cote</th><th>ML vs Marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
+        <div class="sec"><div class="sh"><div class="st">📊 Écart modèle / marché <span class="sc" id="ct-scan">0</span></div></div>
+        <div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>EV théorique</th><th>Score Prédit</th><th>Issue</th><th>Sources</th><th>Cote</th><th>ML vs Marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
       </div>
     </div>
 
@@ -766,26 +766,23 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     <!-- AI RESEARCH LAB -->
     <div id="labPage" class="page">
       <div class="model-info-bar" style="margin-bottom:16px">
-        <div class="mib-item"><span>Lab Status</span><span class="mib-val g">● ONLINE</span></div>
+        <div class="mib-item"><span>Source</span><span class="mib-val g">The Odds API</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Modèles Actifs</span><span class="mib-val c">7</span></div>
+        <div class="mib-item"><span>Modèle actif</span><span class="mib-val c">Poisson calibré</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Expériences</span><span class="mib-val p">142</span></div>
+        <div class="mib-item"><span>Historique</span><span class="mib-val p">Non connecté</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Avg Accuracy</span><span class="mib-val g">71.8%</span></div>
-        <div class="mib-sep"></div>
-        <div class="mib-item"><span>Last Retrain</span><span class="mib-val o">Aujourd'hui</span></div>
+        <div class="mib-item"><span>Précision mesurée</span><span class="mib-val o">Non disponible</span></div>
       </div>
       <div class="sec"><div class="sh"><div class="st">🔬 Outils Poisson</div></div>
         <div class="lab-grid">
-          <div class="lab-card" onclick="showLabModule('dataset')"><span class="lab-badge new">LIVE</span><div class="lab-ico">🗄️</div><div class="lab-name">Dataset Explorer</div><div class="lab-desc">Cotes 1X2 · buts attendus<br>Visualisation & audit qualité</div></div>
-          <div class="lab-card" onclick="showLabModule('features')"><span class="lab-badge exp">ML</span><div class="lab-ico">🔍</div><div class="lab-name">Facteurs du modèle</div><div class="lab-desc">Importance SHAP · Corrélation<br>Distribution & outliers</div></div>
-          <div class="lab-card" onclick="showLabModule('models')"><span class="lab-badge new">7</span><div class="lab-ico">🤖</div><div class="lab-name">Méthode Poisson</div><div class="lab-desc">Poisson · Cotes marché · Probabilités marché<br>Score exact · Poisson</div></div>
-          <div class="lab-card" onclick="showLabModule('simulation')"><span class="lab-badge exp">MC</span><div class="lab-ico">🎲</div><div class="lab-name">Simulation Center</div><div class="lab-desc">Monte Carlo · 10K itérations<br>Distribution de résultats</div></div>
-          <div class="lab-card" onclick="showLabModule('backtest')"><span class="lab-badge beta">BETA</span><div class="lab-ico">📅</div><div class="lab-name">Historical Backtesting</div><div class="lab-desc">5 saisons · Performance tracker<br>ROI & calibration historique</div></div>
-          <div class="lab-card" onclick="showLabModule('xai')"><span class="lab-badge exp">SHAP</span><div class="lab-ico">🧠</div><div class="lab-name">Explainable AI</div><div class="lab-desc">SHAP values · Feature attribution<br>Decision path visualization</div></div>
-          <div class="lab-card" onclick="showLabModule('quality')"><div class="lab-ico">📋</div><div class="lab-name">Data Quality</div><div class="lab-desc">Completeness · Accuracy<br>Drift detection · Alerts</div></div>
-          <div class="lab-card" onclick="showLabModule('experimental')"><span class="lab-badge beta">EXP</span><div class="lab-ico">⚗️</div><div class="lab-name">Experimental Models</div><div class="lab-desc">Scores Poisson · probabilités 1X2</div></div>
+          <div class="lab-card" onclick="showLabModule('dataset')"><span class="lab-badge new">LIVE</span><div class="lab-ico">🗄️</div><div class="lab-name">Données de marché</div><div class="lab-desc">Cotes 1X2 · totaux disponibles<br>Matchs à venir · source Odds API</div></div>
+          <div class="lab-card" onclick="showLabModule('features')"><span class="lab-badge exp">Poisson</span><div class="lab-ico">🔍</div><div class="lab-name">Facteurs du modèle</div><div class="lab-desc">Cotes 1X2 · totaux disponibles<br>Calibration probabiliste</div></div>
+          <div class="lab-card" onclick="showLabModule('models')"><span class="lab-badge new">1</span><div class="lab-ico">🤖</div><div class="lab-name">Méthode Poisson</div><div class="lab-desc">Cotes marché · buts attendus<br>Scores et probabilités</div></div>
+          <div class="lab-card" onclick="showLabModule('simulation')"><span class="lab-badge exp">MC</span><div class="lab-ico">🎲</div><div class="lab-name">Simulation Center</div><div class="lab-desc">Monte Carlo · jusqu’à 50K itérations<br>Simulation Poisson</div></div>
+          <div class="lab-card"><span class="lab-badge beta">À venir</span><div class="lab-ico">📅</div><div class="lab-name">Backtest historique</div><div class="lab-desc">Aucun historique de résultats connecté<br>Précision et ROI non mesurés</div></div>
+          <div class="lab-card"><span class="lab-badge exp">À venir</span><div class="lab-ico">🧠</div><div class="lab-name">Explication du modèle</div><div class="lab-desc">Attribution des facteurs<br>Pas encore implémentée</div></div>
+          <div class="lab-card"><span class="lab-badge beta">À venir</span><div class="lab-ico">📋</div><div class="lab-name">Qualité des données</div><div class="lab-desc">Contrôles de qualité<br>À connecter</div></div>
         </div>
       </div>
       <div id="labContent"></div>
@@ -858,7 +855,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
             <li class="yes">Dashboard complet</li>
             <li class="yes"><strong>Poisson Engine + Matrice 6×6</strong></li>
             <li class="yes"><strong>Monte Carlo 10K simulations</strong></li>
-            <li class="yes"><strong>SHAP Feature Importance</strong></li>
+            <li class="yes"><strong>Matrice Poisson des scores</strong></li>
             <li class="yes"><strong>Outils Poisson complet</strong></li>
             <li class="yes"><strong>xG · xA · PPDA · Elo</strong></li>
           </ul>
@@ -1147,7 +1144,7 @@ function mkSbRow(item){
 
 function renderPredPage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Prédictions calibrées via Poisson + Poisson + Ensemble.",["Matrice Poisson 6×6","Top 10 scores probables","xG Timeline","Confidence intervals","Influence des probabilités de marché"]);$("predCont").style.display="none";return;}
+  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Prédictions calibrées via Poisson + Poisson + Ensemble.",["Matrice Poisson 9×9","Top 10 scores probables","xG Timeline","Confidence intervals","Influence des probabilités de marché"]);$("predCont").style.display="none";return;}
   $("predGate").innerHTML="";$("predCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]);
@@ -1158,7 +1155,7 @@ function renderPredPage(){
 
 function renderScanPage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("scanGate").innerHTML=mkGate("Expected Value Scanner","Détectez les opportunités xEV via ML.",["xEV calculé","Bayesian probability","Market inefficiency detection"]);$("scanCont").style.display="none";return;}
+  if(!isPrem){$("scanGate").innerHTML=mkGate("Expected Value Scanner","Compare les probabilités Poisson calibrées aux cotes. Signal indicatif, non backtesté.",["Cotes réelles","Poisson calibré","Précision non mesurée"]);$("scanCont").style.display="none";return;}
   $("scanGate").innerHTML="";$("scanCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]);
@@ -1226,39 +1223,6 @@ function renderAnalysis(matchId){
     +'<div class="empty" style="padding:12px;font-size:11px">Estimation fondée sur les cotes disponibles. Les compositions, blessures et statistiques détaillées ne sont pas intégrées.</div>';
 }
 
-function renderCharts(m){
-  var ctx=document.getElementById("xgChart");
-  if(ctx&&typeof Chart!=="undefined"){
-    if(ctx._chart)ctx._chart.destroy();
-    ctx._chart=new Chart(ctx,{
-      type:"line",
-      data:{labels:["5'","15'","30'","45'","55'","65'","75'","90'"],
-        datasets:[
-          {label:m.home,data:[0,.1,.3,.7,1.0,1.2,1.5,(m.xg&&m.xg.home||1.8)],borderColor:"#00e5ff",backgroundColor:"rgba(0,229,255,.08)",tension:.4,fill:true,pointRadius:3},
-          {label:m.away,data:[0,.05,.2,.4,.6,.8,1.0,(m.xg&&m.xg.away||1.2)],borderColor:"#bf5af2",backgroundColor:"rgba(191,90,242,.08)",tension:.4,fill:true,pointRadius:3}
-        ]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{labels:{color:"#7a9bc0",font:{family:"IBM Plex Mono",size:9}}}},
-        scales:{x:{ticks:{color:"#3d5570",font:{size:9}},grid:{color:"rgba(255,255,255,.04)"}},
-          y:{ticks:{color:"#3d5570",font:{size:9}},grid:{color:"rgba(255,255,255,.04)"}}}}
-    });
-  }
-  var ctx2=document.getElementById("mcChart");
-  if(ctx2&&typeof Chart!=="undefined"){
-    if(ctx2._chart)ctx2._chart.destroy();
-    var ph=Math.round((m.probs&&m.probs.h||.45)*100);
-    var bins=Array.from({length:10},function(_,i){return Math.round(Math.exp(-Math.pow(i*10-ph,2)/200)*95);});
-    ctx2._chart=new Chart(ctx2,{
-      type:"bar",
-      data:{labels:["0-10%","10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%","80-90%","90-100%"],
-        datasets:[{label:"Distribution MC",data:bins,backgroundColor:"rgba(191,90,242,.25)",borderColor:"#bf5af2",borderWidth:1}]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:"#3d5570",font:{size:8}},grid:{color:"rgba(255,255,255,.03)"}},
-          y:{ticks:{color:"#3d5570",font:{size:8}},grid:{color:"rgba(255,255,255,.03)"}}}}
-    });
-  }
-}
 
 function renderPoissonMatrix(m){
   var mat=m.poisson,pred=m.prediction||{};
@@ -1320,14 +1284,11 @@ function showLabModule(mod){
       +'<div class="sim-field"><div class="sim-label">Simulations</div><input class="sim-input" id="simN" type="number" value="10000" step="1000" min="1000" max="50000"></div>'
       +'<button class="sim-btn" onclick="runSimulation()">▶ Simuler</button>'
       +'</div></div><div id="simResult"></div></div>';
-  }else{
-    c.innerHTML='<div class="sec"><div class="sh"><div class="st">Modèle et données</div></div>'
-      +'<div class="rc info"><div class="rc-ico">📊</div><div class="rc-title">Poisson calibré aux cotes</div>'
-      +'<div class="rc-body">Les buts attendus sont ajustés aux probabilités 1X2 et aux totaux over/under 2,5 lorsqu’ils sont disponibles. OddsLab ne dispose pas ici d’un historique de résultats validé; aucune précision, valeur SHAP ou performance de backtest n’est revendiquée.</div></div></div>';
+  } else {
+    c.innerHTML='<div class="rc info"><div class="rc-title">Module non disponible</div><div class="rc-body">Cette fonction n’est pas encore implémentée. Le projet ne dispose pas d’historique de résultats pour le backtest, ni de données SHAP, de classement officiel ou de score Elo. Les estimations actives utilisent les cotes et le modèle Poisson.</div></div>';
   }
   c.scrollIntoView({behavior:"smooth",block:"start"});
 }
-
 function runSimulation(){
   var lH=parseFloat(($("simH")&&$("simH").value)||"1.8");
   var lA=parseFloat(($("simA")&&$("simA").value)||"1.2");
