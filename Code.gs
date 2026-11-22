@@ -97,8 +97,9 @@ function routeGet(p) {
     case "analysis":    return getMatchAnalysis(p.matchId);
     case "scanner":     return getValueScanner();
     case "safebets":    return getSafeBets();
-    case "admin":       return adminStats();
-    case "admin_users": return adminUsers();
+    case "admin":       requireAdmin_(p.token); return adminStats_();
+    case "admin_users": requireAdmin_(p.token); return adminUsers_();
+    case "public_config": return getPublicConfig_();
     case "ping":        return { v:CFG.VER, ts:Date.now() };
     default: throw new Error("Unknown action: "+p.action);
   }
@@ -108,8 +109,8 @@ function routePost(b) {
   switch(b.action) {
     case "login":          return loginUser(b.email, b.password);
     case "register":       return registerUser(b.email, b.password, b.name);
-    case "paypal_success": return paypalSuccess(b.subscriptionId, b.email);
-    case "admin_disable":  return adminDisable(b.userId, b.disabled);
+    case "paypal_success": return paypalSuccess_(b.subscriptionId, b.email);
+    case "admin_disable":  requireAdmin_(b.token); return adminDisable_(b.userId, b.disabled);
     default: throw new Error("Unknown action: "+b.action);
   }
 }
@@ -151,7 +152,21 @@ function getSheet(name) {
 }
 function md5(s)   { return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5,s).map(function(b){return("0"+(b<0?b+256:b).toString(16)).slice(-2);}).join(""); }
 function uid()    { return "u"+Date.now().toString(36)+Math.random().toString(36).substr(2,5); }
-function tok(e,h) { return md5(e+h+"ola6").substr(0,20); }
+function authSecret_() {
+  var props=PropertiesService.getScriptProperties(), secret=props.getProperty("ODDSLAB_AUTH_SECRET");
+  if(!secret){secret=Utilities.getUuid()+Utilities.getUuid();props.setProperty("ODDSLAB_AUTH_SECRET",secret);}
+  return secret;
+}
+function tok(e,h) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(String(e)+"\\n"+String(h),authSecret())).replace(/=+$/,"");
+}
+function requireAdmin_(token) {
+  var email=getSecret_("ADMIN_EMAIL").toLowerCase(), pass=getSecret_("ADMIN_PASS");
+  if(!email||!pass||!token) throw new Error("Action réservée à l'administrateur.");
+  var expected=tok(email,md5(pass));
+  if(String(token)!==expected) throw new Error("Session administrateur invalide. Reconnectez-vous.");
+  return true;
+}
 function slog(id,a,d) { try{getSheet(CFG.SHEETS.logs).appendRow([new Date().toISOString(),id,a,d||""]);}catch(e){} }
 
 // ══════════════════════════════════════════════════════════════════
@@ -191,14 +206,66 @@ function registerUser(email, password, name) {
   return { user:{id:id,email:email,name:name||email.split("@")[0],plan:"free"}, token:tok(email,h) };
 }
 
-function paypalSuccess(subId, email) {
+function getPublicConfig_() {
+  var clientId=getSecret_("PAYPAL_CLIENT_ID"), planId=getSecret_("PAYPAL_PLAN_ID");
+  if(!clientId||!planId||/YOUR_|CHANGE_ME/i.test(clientId+planId)) return {paypalEnabled:false};
+  return {paypalEnabled:true,paypalClientId:clientId,paypalPlanId:planId};
+}
+
+function paypalApiBase_() {
+  var env=getSecret_("PAYPAL_ENV").toLowerCase();
+  if(env!=="sandbox"&&env!=="live") throw new Error("PAYPAL_ENV doit être sandbox ou live.");
+  return env==="sandbox"?"https://api-m.sandbox.paypal.com":"https://api-m.paypal.com";
+}
+
+function paypalAccessToken_() {
+  var clientId=getSecret_("PAYPAL_CLIENT_ID"), secret=getSecret_("PAYPAL_CLIENT_SECRET");
+  if(!clientId||!secret||/YOUR_|CHANGE_ME/i.test(clientId+secret))
+    throw new Error("Paiement indisponible : configurez les identifiants PayPal côté serveur.");
+  var response=UrlFetchApp.fetch(paypalApiBase_()+"/v1/oauth2/token",{
+    method:"post",
+    contentType:"application/x-www-form-urlencoded",
+    headers:{Authorization:"Basic "+Utilities.base64Encode(clientId+":"+secret)},
+    payload:"grant_type=client_credentials",
+    muteHttpExceptions:true
+  });
+  if(response.getResponseCode()!==200) throw new Error("Authentification PayPal impossible.");
+  var body=JSON.parse(response.getContentText());
+  if(!body.access_token) throw new Error("PayPal n'a pas fourni de jeton.");
+  return body.access_token;
+}
+
+function verifyPaypalSubscription_(subId, email) {
+  var planId=getSecret_("PAYPAL_PLAN_ID");
+  if(!planId||/YOUR_|CHANGE_ME/i.test(planId)) throw new Error("PAYPAL_PLAN_ID n'est pas configuré.");
+  var safeId=String(subId||"");
+  if(!/^[A-Za-z0-9-]{5,80}$/.test(safeId)) throw new Error("Identifiant d'abonnement invalide.");
+  var response=UrlFetchApp.fetch(paypalApiBase_()+"/v1/billing/subscriptions/"+encodeURIComponent(safeId),{
+    method:"get",
+    headers:{Authorization:"Bearer "+paypalAccessToken_(),Accept:"application/json"},
+    muteHttpExceptions:true
+  });
+  if(response.getResponseCode()!==200) throw new Error("Abonnement PayPal introuvable ou non vérifiable.");
+  var sub=JSON.parse(response.getContentText()), subscriber=sub.subscriber||{};
+  if(sub.status!=="ACTIVE"||sub.plan_id!==planId)
+    throw new Error("L'abonnement PayPal n'est pas actif sur le forfait attendu.");
+  if(!subscriber.email_address||subscriber.email_address.toLowerCase()!==String(email||"").toLowerCase())
+    throw new Error("L'adresse du compte ne correspond pas à l'acheteur PayPal.");
+  return sub;
+}
+
+function paypalSuccess_(subId, email) {
   if(!subId||!email) throw new Error("Données invalides");
+  email=String(email).trim().toLowerCase();
+  var verified=verifyPaypalSubscription_(subId,email);
   var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++){
-    if(rows[i][1].toString().toLowerCase()===email.toLowerCase()){
-      sh.getRange(i+1,5).setValue("premium"); sh.getRange(i+1,6).setValue(subId);
-      slog(rows[i][0],"upgrade","PayPal:"+subId);
-      return { upgraded:true, plan:"premium" };
+    if(String(rows[i][1]||"").toLowerCase()===email){
+      if(rows[i][5]===subId&&rows[i][4]==="premium") return {upgraded:true,plan:"premium",verified:true};
+      sh.getRange(i+1,5).setValue("premium");
+      sh.getRange(i+1,6).setValue(subId);
+      slog(rows[i][0],"upgrade","PayPal verified:"+verified.status);
+      return {upgraded:true,plan:"premium",verified:true};
     }
   }
   throw new Error("Utilisateur non trouvé");
@@ -752,19 +819,19 @@ function getSafeBets() {
 // ══════════════════════════════════════════════════════════════════
 //  ADMIN
 // ══════════════════════════════════════════════════════════════════
-function adminStats() {
+function adminStats_() {
   var rows=getSheet(CFG.SHEETS.users).getDataRange().getValues().slice(1);
   var p=rows.filter(function(r){return r[4]==="premium";}).length;
   return { total:rows.length, premium:p, free:rows.length-p,
     disabled:rows.filter(function(r){return r[8]===true||r[8]==="TRUE";}).length,
     revenue:(p*9.99).toFixed(2) };
 }
-function adminUsers() {
+function adminUsers_() {
   return getSheet(CFG.SHEETS.users).getDataRange().getValues().slice(1).map(function(r){
     return { id:r[0], email:r[1], name:r[3], plan:r[4]||"free", created:r[6], lastLogin:r[7], disabled:r[8]===true||r[8]==="TRUE" };
   });
 }
-function adminDisable(userId, disabled) {
+function adminDisable_(userId, disabled) {
   var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++) if(rows[i][0]===userId){ sh.getRange(i+1,9).setValue(disabled); return{done:true}; }
   throw new Error("User not found");
