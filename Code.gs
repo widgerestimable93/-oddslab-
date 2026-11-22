@@ -543,7 +543,7 @@ function buildFallbackVerdict(match) {
 // ══════════════════════════════════════════════════════════════════
 //  COLLECTE MATCHS — toutes ligues, cotes réelles
 // ══════════════════════════════════════════════════════════════════
-function getAllMatches() {
+function getAllMatches_() {
   var cKey = "all_matches_v6";
   var cache = CacheService.getScriptCache();
   var hit = cache.get(cKey);
@@ -569,8 +569,8 @@ function getAllMatches() {
   return all;
 }
 
-function getLeagueMatches(leagueKey) {
-  var all = getAllMatches();
+function getLeagueMatches_(leagueKey) {
+  var all = getAllMatches_();
   if(!leagueKey) return all;
   return all.filter(function(m){ return m.leagueKey===leagueKey; });
 }
@@ -853,8 +853,8 @@ function riskLevel(ai, trap) {
 // ══════════════════════════════════════════════════════════════════
 //  ANALYSE DÉTAILLÉE avec Gemini
 // ══════════════════════════════════════════════════════════════════
-function getMatchAnalysis(matchId) {
-  var all = getAllMatches();
+function getMatchAnalysis_(matchId) {
+  var all = getAllMatches_();
   var m = null;
   for(var i=0;i<all.length;i++) if(all[i].id===matchId){ m=all[i]; break; }
   if(!m) throw new Error("Match introuvable (id: "+matchId+")");
@@ -869,8 +869,8 @@ function getMatchAnalysis(matchId) {
 // ══════════════════════════════════════════════════════════════════
 //  DASHBOARD
 // ══════════════════════════════════════════════════════════════════
-function getDashboard() {
-  var all   = getAllMatches();
+function getDashboard_() {
+  var all   = getAllMatches_();
   var vbs   = all.filter(function(m){return m.value&&m.value.detected;});
   var traps = all.filter(function(m){return m.trap&&m.trap.detected;});
   var sbAll = [];
@@ -899,14 +899,14 @@ function getDashboard() {
   };
 }
 
-function getValueScanner() {
-  var all = getAllMatches();
+function getValueScanner_() {
+  var all = getAllMatches_();
   var vbs = all.filter(function(m){return m.value&&m.value.detected;}).sort(function(a,b){return b.value.pct-a.value.pct;});
   return { total:vbs.length, matches:vbs };
 }
 
-function getSafeBets() {
-  var all=getAllMatches(), flat=[];
+function getSafeBets_() {
+  var all=getAllMatches_(), flat=[];
   all.forEach(function(m){ (m.safeBets||[]).forEach(function(sb){ flat.push({match:m,bet:sb}); }); });
   flat.sort(function(a,b){return b.bet.confidence-a.bet.confidence;});
   return { total:flat.length, bets:flat };
@@ -947,14 +947,14 @@ function testSetup(){
   Logger.log("=== OddsLab v6 TEST ===");
   Logger.log("Gemini configuré: "+(getSecret_("GEMINI_KEY")?"OUI":"NON — définir la propriété GEMINI_KEY (Gemini est facultatif)."));
   try {
-    var matches = getAllMatches();
+    var matches = getAllMatches_();
     Logger.log("Matchs chargés: "+matches.length);
     if(matches.length>0){
       var m = matches[0];
       Logger.log("Premier match: "+m.home+" vs "+m.away+" | "+m.time);
       Logger.log("Cotes réelles: 1="+m.odds.h+" X="+m.odds.d+" 2="+m.odds.a);
       Logger.log("Value: "+m.value.detected+" ("+m.value.pct+"%) | Trap: "+m.trap.detected);
-      var analysis = getMatchAnalysis(m.id);
+      var analysis = getMatchAnalysis_(m.id);
       Logger.log("Gemini verdict: "+analysis.gemini.verdict+" ("+analysis.gemini.confidence+"%)");
       Logger.log("Gemini fallback: "+(analysis.gemini.fallback||false));
     }
