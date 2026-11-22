@@ -27,6 +27,11 @@ assert.ok(manifest.icons.some((icon) => icon.sizes.split(/\s+/).includes("192x19
 assert.ok(manifest.icons.some((icon) => icon.sizes.split(/\s+/).includes("512x512")));
 manifest.icons.forEach((icon) => assert.ok(fs.existsSync(path.join(root, icon.src.replace(/^\.\//, ""))), `missing icon ${icon.src}`));
 assert.match(html, /rel="manifest" href="\.\/manifest\.webmanifest"/);
+const pwaManifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
+assert.equal(pwaManifest.id, "./", "PWA should have a stable install identity");
+assert.ok(pwaManifest.icons.some(icon => icon.sizes === "192x192" && icon.type === "image/png"));
+assert.ok(pwaManifest.icons.some(icon => icon.sizes === "512x512" && icon.type === "image/png"));
+for (const icon of ["icon-192.png", "icon-512.png"]) assert.ok(fs.statSync(path.join(root, icon)).size > 0, `${icon} should exist`);
 assert.match(html, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
 assert.match(html, /id="oddsAppFrame"/, "GitHub Pages should retain its PWA origin and embed Apps Script");
 assert.doesNotMatch(html, /window\.location\.replace\(GAS_URL\)/, "GitHub Pages must not redirect away from the installable origin");

@@ -9,6 +9,8 @@ on:
       - "manifest.webmanifest"
       - "sw.js"
       - "icon.svg"
+      - "icon-192.png"
+      - "icon-512.png"
       - "tests/**"
       - ".github/workflows/validate.yml"
   pull_request:
@@ -19,6 +21,8 @@ on:
       - "manifest.webmanifest"
       - "sw.js"
       - "icon.svg"
+      - "icon-192.png"
+      - "icon-512.png"
       - "tests/**"
       - ".github/workflows/validate.yml"
   workflow_dispatch:
