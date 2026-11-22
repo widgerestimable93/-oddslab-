@@ -1,0 +1,15 @@
+# Build caches and outputs
+.gradle/
+**/.gradle/
+build/
+**/build/
+*.apk
+*.aab
+*.ap_
+
+# Signing credentials and local secrets
+*.jks
+*.keystore
+local.properties
+.env
+.env.*
