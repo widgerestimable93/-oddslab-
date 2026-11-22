@@ -520,7 +520,7 @@ function buildGeminiPrompt(m) {
     + "Date: "+m.time+"\n"
     + "Cotes réelles bookmakers: 1="+m.odds.h+" X="+m.odds.d+" 2="+m.odds.a+"\n"
     + "Probabilités Poisson: Dom="+Math.round((probs.h||0)*100)+"% Nul="+Math.round((probs.d||0)*100)+"% Ext="+Math.round((probs.a||0)*100)+"%\n"
-    + "xG estimé: Dom="+xg.home+" Ext="+xg.away+"\n"
+    + "Buts attendus estimés depuis les cotes: Dom="+xg.home+" Ext="+xg.away+"\n"
     + "Value bet: "+(value.detected?"OUI (+"+value.pct+"% sur "+(value.best==="h"?"Victoire dom":value.best==="a"?"Victoire ext":"Nul")+")":"NON")+"\n"
     + "Piège détecté: "+(trap.detected?"OUI ("+trap.sev+")":"NON")+"\n"
     + "Score prédit: "+m.prediction.home+"-"+m.prediction.away+" ("+m.prediction.pct+"%)\n\n"
@@ -685,7 +685,7 @@ function extractOdds(bms, homeTeam, awayTeam) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  MODÈLE xG
+//  BUTS ATTENDUS ESTIMÉS DEPUIS LES COTES (pas des xG de tirs)
 // ══════════════════════════════════════════════════════════════════
 function fitGoalRates(odds, lg) {
   // Ajuste les deux intensités de buts aux probabilités 1X2 et au total
@@ -855,13 +855,13 @@ function computeSafeBets(odds, xg, probs, lg) {
     safe.push({type:"OVER_1_5",label:"Over 1.5 buts",icon:"⚽",
       confidence:Math.round(probs.over15*100),odds:odds.over15,
       risk:probs.over15>=0.82?"LOW":"MEDIUM",
-      desc:"xG modèle total: "+totalXG+" | Probabilité Poisson: "+Math.round(probs.over15*100)+"%"});
+      desc:"Buts attendus estimés au total: "+totalXG+" | Probabilité Poisson: "+Math.round(probs.over15*100)+"%"});
   }
   if(probs.over25>=0.54&&odds.over25>1.20){
     safe.push({type:"OVER_2_5",label:"Over 2.5 buts",icon:"🔥",
       confidence:Math.round(probs.over25*100),odds:odds.over25,
       risk:probs.over25>=0.65?"LOW":"MEDIUM",
-      desc:"xG modèle domicile: "+xg.home+" extérieur: "+xg.away+" | Probabilité Poisson: "+Math.round(probs.over25*100)+"%"});
+      desc:"Buts attendus estimés depuis les cotes — domicile: "+xg.home+", extérieur: "+xg.away+" | Probabilité Poisson: "+Math.round(probs.over25*100)+"%"});
   }
   return safe;
 }

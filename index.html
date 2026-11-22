@@ -721,10 +721,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       </div>
       <div class="kpi-row">
         <div class="kpi c"><div class="kpi-ico">⚽</div><div class="kpi-lbl">Matchs Analysés</div><div class="kpi-val" id="k-m">–</div><div class="kpi-sub">modèle Poisson calibré aux cotes</div></div>
-        <div class="kpi p"><div class="kpi-ico">🎯</div><div class="kpi-lbl">Prédictions Actives</div><div class="kpi-val" id="k-p">–</div><div class="kpi-sub">Confiance ≥60%</div></div>
+        <div class="kpi p"><div class="kpi-ico">🎯</div><div class="kpi-lbl">Scores estimés</div><div class="kpi-val" id="k-p">–</div><div class="kpi-sub">Probabilité du score ≥10%</div></div>
         <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Écarts modèle / marché</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">EV théorique</div></div>
-        <div class="kpi o"><div class="kpi-ico">🛡</div><div class="kpi-lbl">Forecasts Stables</div><div class="kpi-val" id="k-s">–</div><div class="kpi-sub">Stabilité ≥75%</div></div>
-        <div class="kpi r"><div class="kpi-ico">⚠</div><div class="kpi-lbl">Alertes Risque</div><div class="kpi-val" id="k-t">–</div><div class="kpi-sub">Anomalies ML</div></div>
+        <div class="kpi o"><div class="kpi-ico">🛡</div><div class="kpi-lbl">Marchés de buts listés</div><div class="kpi-val" id="k-s">–</div><div class="kpi-sub">Probabilités Poisson estimées</div></div>
+        <div class="kpi r"><div class="kpi-ico">⚠</div><div class="kpi-lbl">Alertes de marché</div><div class="kpi-val" id="k-t">–</div><div class="kpi-sub">Écarts détectés, non validés par backtest</div></div>
       </div>
       <div class="sec"><div class="sh"><div class="st">🤖 Top Prédictions Poisson <span class="sc" id="ct-tp">0</span></div><span class="sm" onclick="nav('predictions')">Prediction Engine →</span></div><div class="mg" id="g-tp"></div></div>
       <div class="sec"><div class="sh"><div class="st">📊 Écarts modèle / marché <span class="sc" id="ct-vb">0</span></div><span class="sm" onclick="nav('scanner')">Comparateur →</span></div><div class="mg" id="g-vb"></div></div>
@@ -788,7 +788,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div id="labContent"></div>
     </div>
 
-    <!-- ELO RATINGS -->
+    <!-- MATCH MARKETS -->
     <div id="eloPage" class="page">
       <div class="sec"><div class="sh"><div class="st">📡 Matchs réels — cotes et scores probables</div></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px" id="elo-body"></div>
@@ -1069,7 +1069,7 @@ function renderDashboard(){
   $("ct-tp").textContent=Math.min(preds.length,6);
   $("g-tp").innerHTML=preds.slice().sort(function(a,b){return b.prediction.pct-a.prediction.pct;}).slice(0,6).map(mkCard).join("")||empty("🎯","Aucune prédiction disponible");
   $("ct-vb").textContent=vbs.length;
-  $("g-vb").innerHTML=vbs.sort(function(a,b){return b.value.pct-a.value.pct;}).slice(0,6).map(mkCard).join("")||empty("📊","Aucune opportunité xEV");
+  $("g-vb").innerHTML=vbs.sort(function(a,b){return b.value.pct-a.value.pct;}).slice(0,6).map(mkCard).join("")||empty("📊","Aucun écart positif détecté");
   $("ct-sb").textContent=sbFlat.length;
   $("g-sb").innerHTML=sbFlat.slice(0,6).map(mkSbRow).join("")||empty("🛡","Aucun forecast disponible");
   $("ct-all").textContent=all.length;
@@ -1096,7 +1096,7 @@ function mkCard(m){
     +(pred.home!==undefined?'<div class="pred-score">'+pred.home+' – '+pred.away+'</div>':'<div class="pred-score" style="font-size:14px;color:var(--t4)">Calcul...</div>')
     +(pred.pct?'<div class="pred-pct">'+pred.pct+'%</div>':"")
     +(pred.pct?'<div class="pred-sep"></div>':"")
-    +'<div class="pred-xg">xG: <b>'+((xg.home||0).toFixed(1))+'</b> — <b>'+((xg.away||0).toFixed(1))+'</b></div>'
+    +'<div class="pred-xg">Buts attendus estimés: <b>'+((xg.home||0).toFixed(1))+'</b> — <b>'+((xg.away||0).toFixed(1))+'</b></div>'
     +'<div class="pred-tags">'
     +(v.detected?'<span class="chip vb">EV théorique +'+v.pct+'%</span>':"")
     +(m.trap&&m.trap.detected?'<span class="chip trap">⚠ RISK</span>':"")
@@ -1116,9 +1116,9 @@ function mkCard(m){
     +'<span class="mc-time-top">'+dStr+' '+tStr+'</span></div>'
     +'<div class="mc-body">'
     +'<div class="mc-teams">'
-    +'<div class="mc-team home"><div class="mc-tn">'+(m.home||"–")+'</div><div class="mc-form">xG: '+((xg.home||0).toFixed(1))+'</div></div>'
+    +'<div class="mc-team home"><div class="mc-tn">'+(m.home||"–")+'</div><div class="mc-form">Buts attendus: '+((xg.home||0).toFixed(1))+'</div></div>'
     +'<div class="mc-center"><div class="mc-vs">VS</div><div style="font-family:var(--fd);font-size:9px;color:var(--t4)">'+tStr+'</div></div>'
-    +'<div class="mc-team away"><div class="mc-tn">'+(m.away||"–")+'</div><div class="mc-form">xG: '+((xg.away||0).toFixed(1))+'</div></div>'
+    +'<div class="mc-team away"><div class="mc-tn">'+(m.away||"–")+'</div><div class="mc-form">Buts attendus: '+((xg.away||0).toFixed(1))+'</div></div>'
     +'</div>'
     +oddsHtml+'</div>'
     +predHtml
@@ -1148,7 +1148,7 @@ function mkSbRow(item){
 
 function renderPredPage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Prédictions calibrées via Poisson + Poisson + Ensemble.",["Matrice Poisson 9×9","Top 10 scores probables","xG Timeline","Confidence intervals","Influence des probabilités de marché"]);$("predCont").style.display="none";return;}
+  if(!isPrem){$("predGate").innerHTML=mkGate("Prediction Engine","Scores probables calculés avec un modèle Poisson ajusté aux cotes disponibles. Estimations indicatives, non backtestées.",["Matrice de scores Poisson","Scores les plus probables","Buts attendus estimés depuis le marché","Cotes et probabilités disponibles"]);$("predCont").style.display="none";return;}
   $("predGate").innerHTML="";$("predCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]);
@@ -1186,7 +1186,7 @@ function renderScanPage(){
 
 function renderSafePage(){
   var isPrem=S.user&&(S.user.plan==="premium"||S.user.plan==="admin");
-  if(!isPrem){$("safeGate").innerHTML=mkGate("Probabilités de buts","Probabilités calibrées via xG + Poisson.",["Over 1.5/2.5 Poisson","Probabilités over/under","Signal de risque modèle"]);$("safeCont").style.display="none";return;}
+  if(!isPrem){$("safeGate").innerHTML=mkGate("Probabilités de buts","Probabilités estimées par le modèle Poisson à partir des cotes disponibles. Elles ne sont pas des conseils ni une garantie.",["Marchés over 1,5 et 2,5 disponibles","Probabilités estimées","Résultats non backtestés"]);$("safeCont").style.display="none";return;}
   $("safeGate").innerHTML="";$("safeCont").style.display="";
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]),flat=[];
@@ -1217,7 +1217,7 @@ function renderAnalysis(matchId){
     +'<div class="ah-prediction"><div style="text-align:center"><div class="ah-pred-lbl">Score exact le plus probable</div>'
     +'<div class="ah-pred-score">'+(pred.home!==undefined?pred.home+" – "+pred.away:"—")+'</div></div>'
     +'<div class="ah-pred-meta"><div class="ah-pred-lbl">Probabilité du score</div><div class="ah-pred-pct">'+(pred.pct||0)+'%</div></div>'
-    +'<div style="text-align:center"><div class="ah-pred-lbl">Buts attendus · Poisson</div><div class="ah-pred-score" style="font-size:24px">'+((xg.home||0).toFixed(2))+' – '+((xg.away||0).toFixed(2))+'</div></div></div>'
+    +'<div style="text-align:center"><div class="ah-pred-lbl">Buts attendus estimés depuis les cotes</div><div class="ah-pred-score" style="font-size:24px">'+((xg.home||0).toFixed(2))+' – '+((xg.away||0).toFixed(2))+'</div></div></div>'
     +'<div class="sec"><div class="sh"><div class="st">Probabilités 1X2 issues du modèle</div></div>'
     +'<div class="prob-trio"><div class="prob-item"><div class="prob-lbl">Victoire domicile</div><div class="prob-pct">'+Math.round((probs.h||0)*100)+'%</div></div>'
     +'<div class="prob-item"><div class="prob-lbl">Nul</div><div class="prob-pct">'+Math.round((probs.d||0)*100)+'%</div></div>'
@@ -1256,7 +1256,7 @@ function renderPoissonMatrix(m){
   }
   html+='</tbody></table></div>'
     +'<div style="padding:10px 16px;font-family:var(--fd);font-size:9px;color:var(--t3);border-top:1px solid var(--edge)">'
-    +'λH='+((m.xg&&m.xg.home||0).toFixed(2))+' · λA='+((m.xg&&m.xg.away||0).toFixed(2))
+    +'Buts attendus: domicile '+((m.xg&&m.xg.home||0).toFixed(2))+' · extérieur '+((m.xg&&m.xg.away||0).toFixed(2))
     +' · Score le plus probable: <span style="color:var(--p);font-weight:700">'+(pred.home!==undefined?pred.home+"-"+pred.away:"–")+'</span>'
     +' ('+( pred.pct||0)+'%) · estimation Poisson depuis les cotes</div></div>';
   return html;
@@ -1266,7 +1266,7 @@ function buildReport(m){
   var r=[],probs=m.probs||{},xg=m.xg||{},pred=m.prediction||{},odds=m.odds||{};
   var dt=m.time?new Date(m.time):null;
   r.push({icon:"🎯",type:"poi",title:"Score exact le plus probable — "+(pred.home!==undefined?pred.home+"-"+pred.away:"—"),
-    content:"Probabilité du score: <b>"+(pred.pct||0)+"%</b>\nButs attendus estimés: <b>"+((xg.home||0).toFixed(2))+"</b> – <b>"+((xg.away||0).toFixed(2))+"</b>"});
+    content:"Probabilité du score: <b>"+(pred.pct||0)+"%</b>\nButs attendus estimés depuis les cotes: <b>"+((xg.home||0).toFixed(2))+"</b> – <b>"+((xg.away||0).toFixed(2))+"</b>"});
   r.push({icon:"📊",type:"info",title:"Probabilités 1X2 du modèle Poisson",
     content:"Domicile: <b>"+Math.round((probs.h||0)*100)+"%</b> | Nul: <b>"+Math.round((probs.d||0)*100)+"%</b> | Extérieur: <b>"+Math.round((probs.a||0)*100)+"%</b>\nCotes source: <b>"+(odds.h||"–")+" / "+(odds.d||"–")+" / "+(odds.a||"–")+"</b> | Sources: <b>"+(m.bookCount||0)+"</b>"});
   r.push({icon:"ℹ️",type:"neutral",title:"Méthode et limites",

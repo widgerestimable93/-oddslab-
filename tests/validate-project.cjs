@@ -36,6 +36,7 @@ const githubHostPattern = new RegExp(hostGuard[1], "i");
 assert.ok(githubHostPattern.test("widgerestimable93.github.io"), "PWA wrapper must match GitHub Pages hostname");
 assert.ok(!githubHostPattern.test("script.google.com"), "PWA wrapper must not intercept Apps Script itself");
 assert.doesNotMatch(html, /71\.8%|xA · PPDA · Elo|Expected Value Scanner/, "remove unsupported metrics and stale feature labels");
+assert.doesNotMatch(html, /xG Timeline|Confidence intervals|Confiance ≥60%|Anomalies ML|xG:/, "avoid claiming unavailable features or mislabeled market estimates");
 
 const ctx = {};
 vm.runInNewContext(code, ctx, { timeout: 5000 });
