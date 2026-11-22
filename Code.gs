@@ -360,6 +360,8 @@ function paypalAccessToken_() {
   var clientId=getSecret_("PAYPAL_CLIENT_ID"), secret=getSecret_("PAYPAL_CLIENT_SECRET");
   if(!clientId||!secret||/YOUR_|CHANGE_ME/i.test(clientId+secret))
     throw new Error("Paiement indisponible : configurez les identifiants PayPal côté serveur.");
+  var cache=CacheService.getScriptCache(), cacheKey="paypal_access_"+md5(clientId), cached=cache.get(cacheKey);
+  if(cached) return cached;
   var response=UrlFetchApp.fetch(paypalApiBase_()+"/v1/oauth2/token",{
     method:"post",
     contentType:"application/x-www-form-urlencoded",
@@ -370,9 +372,9 @@ function paypalAccessToken_() {
   if(response.getResponseCode()!==200) throw new Error("Authentification PayPal impossible.");
   var body=JSON.parse(response.getContentText());
   if(!body.access_token) throw new Error("PayPal n'a pas fourni de jeton.");
+  cache.put(cacheKey,body.access_token,18000);
   return body.access_token;
 }
-
 function verifyPaypalSubscription_(subId, email) {
   var planId=getSecret_("PAYPAL_PLAN_ID");
   if(!planId||/YOUR_|CHANGE_ME/i.test(planId)) throw new Error("PAYPAL_PLAN_ID n'est pas configuré.");
