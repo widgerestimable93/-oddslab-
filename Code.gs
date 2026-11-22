@@ -90,21 +90,86 @@ function doPost(e) {
 }
 
 function routeGet(p) {
+  p=p||{};
   switch(p.action) {
-    case "dashboard":   return getDashboard();
-    case "matches":     return getAllMatches();
-    case "league":      return getLeagueMatches(p.leagueKey);
-    case "analysis":    return getMatchAnalysis(p.matchId);
-    case "scanner":     return getValueScanner();
-    case "safebets":    return getSafeBets();
-    case "admin":       requireAdmin_(p.token); return adminStats_();
-    case "admin_users": requireAdmin_(p.token); return adminUsers_();
-    case "public_config": return getPublicConfig_();
-    case "ping":        return { v:CFG.VER, ts:Date.now() };
-    default: throw new Error("Unknown action: "+p.action);
+    case "dashboard": {
+      var user=getAuthorizedUser_(p);
+      return dashboardForUser_(getDashboard_(),user);
+    }
+    case "matches":
+      return matchesForUser_(getAllMatches_(),getAuthorizedUser_(p));
+    case "league":
+      return matchesForUser_(getLeagueMatches_(p.leagueKey),getAuthorizedUser_(p));
+    case "analysis":
+      requirePremium_(getAuthorizedUser_(p));
+      return getMatchAnalysis_(p.matchId);
+    case "scanner":
+      requirePremium_(getAuthorizedUser_(p));
+      return getValueScanner_();
+    case "safebets":
+      requirePremium_(getAuthorizedUser_(p));
+      return getSafeBets_();
+    case "admin":
+      requireAdmin_(p.token);
+      return adminStats_();
+    case "admin_users":
+      requireAdmin_(p.token);
+      return adminUsers_();
+    case "public_config":
+      return getPublicConfig_();
+    case "ping":
+      return { v:CFG.VER, ts:Date.now() };
+    default:
+      throw new Error("Unknown action: "+p.action);
   }
 }
 
+function getAuthorizedUser_(p) {
+  var userId=String(p.userId||"");
+  if(!userId) return null;
+  if(userId==="guest") return {id:"guest",plan:"free"};
+  if(userId==="admin") {
+    requireAdmin_(p.token);
+    return {id:"admin",email:getSecret_("ADMIN_EMAIL"),plan:"admin"};
+  }
+  var email=String(p.userEmail||"").trim().toLowerCase();
+  if(!email||!p.token) throw new Error("Session invalide. Reconnectez-vous.");
+  var rows=getSheet(CFG.SHEETS.users).getDataRange().getValues();
+  for(var i=1;i<rows.length;i++){
+    var row=rows[i];
+    if(String(row[0])===userId&&String(row[1]||"").toLowerCase()===email){
+      if(row[8]===true||row[8]==="TRUE") throw new Error("Compte désactivé.");
+      if(!safeEqual_(String(p.token),tok(email,String(row[2]||"")))) throw new Error("Session invalide. Reconnectez-vous.");
+      return {id:userId,email:email,plan:row[4]||"free"};
+    }
+  }
+  throw new Error("Compte introuvable. Reconnectez-vous.");
+}
+
+function requirePremium_(user) {
+  if(user&&(user.plan==="premium"||user.plan==="admin")) return true;
+  throw new Error("Cette fonction demande un compte Research Pro actif.");
+}
+
+function matchesForUser_(matches,user) {
+  if(user&&(user.plan==="premium"||user.plan==="admin")) return matches;
+  return matches.map(function(m){
+    var copy=JSON.parse(JSON.stringify(m));
+    delete copy.value; delete copy.trap; delete copy.safeBets;
+    return copy;
+  });
+}
+
+function dashboardForUser_(dashboard,user) {
+  if(user&&(user.plan==="premium"||user.plan==="admin")) return dashboard;
+  dashboard=JSON.parse(JSON.stringify(dashboard));
+  dashboard.valueBets=0; dashboard.traps=0; dashboard.safeBetsCount=0; dashboard.avgROI=0;
+  dashboard.topValueBets=[]; dashboard.topSafeBets=[];
+  dashboard.allMatches=matchesForUser_(dashboard.allMatches||[],user);
+  dashboard.topAI=matchesForUser_(dashboard.topAI||[],user);
+  (dashboard.byLeague||[]).forEach(function(group){group.matches=matchesForUser_(group.matches||[],user);});
+  return dashboard;
+}
 function routePost(b) {
   switch(b.action) {
     case "login":          return loginUser(b.email, b.password);
