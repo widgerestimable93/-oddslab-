@@ -44,7 +44,7 @@ assert.doesNotMatch(html, /71\.8%|xA · PPDA · Elo|Expected Value Scanner/, "re
 assert.doesNotMatch(html, /xG Timeline|Confidence intervals|Confiance ≥60%|Anomalies ML|xG:/, "avoid claiming unavailable features or mislabeled market estimates");
 assert.match(html, /id="oddsNotice"/, "the UI should warn when displaying stale odds snapshots");
 assert.match(html, /8 grandes ligues/);
-assert.match(html, /Actualisation<\/span><span class="mib-val c">quotidienne/);
+assert.match(html, /Actualisation<\/span><span class="mib-val c">environ toutes les 26 h/);
 
 const ctx = {};
 vm.runInNewContext(code, ctx, { timeout: 5000 });
@@ -56,7 +56,7 @@ assert.equal(
   JSON.stringify(ctx.CFG.LEAGUES.map(league => league.key)),
   "frontend filters and backend quotas should use the same competitions"
 );
-assert.equal(ctx.CFG.ODDS_REFRESH_H, 24, "each competition should refresh at most daily");
+assert.equal(ctx.CFG.ODDS_REFRESH_H, 26, "refresh cadence should reserve free-plan quota headroom");
 assert.equal(ctx.CFG.CACHE_TTL, 21600, "Apps Script memory cache must respect its six-hour maximum");
 assert.equal(ctx.CFG.ERROR_CACHE_TTL, 3600, "API failures should be retried hourly, including after a quota reset");
 const odds = ctx.extractOdds([{

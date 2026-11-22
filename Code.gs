@@ -15,7 +15,7 @@ var CFG = {
   VER:         "6.2.0",
   CACHE_TTL:   21600,  // cache mémoire GAS, maximum 6 h; instantané persistant en feuille
   ERROR_CACHE_TTL: 3600, // retenter au plus tôt une heure après un quota/une panne
-  ODDS_REFRESH_H: 24,  // une actualisation par compétition et par jour
+  ODDS_REFRESH_H: 26,  // cadence quasi quotidienne avec marge pour le forfait gratuit
   CACHE_AI:    3600,   // 60 min pour l'analyse Gemini
   REGION:      "eu",
   ADMIN_EMAIL: "",
@@ -26,7 +26,7 @@ var CFG = {
   WINDOW_H:    168,
 
   // ── Ligues ──────────────────────────────────────────────────────
-  // Le forfait API gratuit (500 crédits/mois) couvre 8 compétitions x 2 marchés x 1 région x 30 jours = 480 crédits max.
+  // À 26 h: jusqu'à ~29 actualisations/mois x 8 compétitions x 2 marchés x 1 région = 464 crédits.
   LEAGUES: [
     { key:"soccer_epl", name:"Premier League", country:"England", flag:"🏴", avgGoals:2.82, homeAdv:0.38 },
     { key:"soccer_spain_la_liga", name:"La Liga", country:"Spain", flag:"🇪🇸", avgGoals:2.60, homeAdv:0.36 },
