@@ -134,7 +134,7 @@ function getAuthorizedUser_(p) {
   }
   var email=String(p.userEmail||"").trim().toLowerCase();
   if(!email||!p.token) throw new Error("Session invalide. Reconnectez-vous.");
-  var rows=getSheet(CFG.SHEETS.users).getDataRange().getValues();
+  var rows=getSheet_(CFG.SHEETS.users).getDataRange().getValues();
   for(var i=1;i<rows.length;i++){
     var row=rows[i];
     if(String(row[0])===userId&&String(row[1]||"").toLowerCase()===email){
@@ -183,7 +183,7 @@ function routePost(b) {
 // ══════════════════════════════════════════════════════════════════
 //  DATABASE
 // ══════════════════════════════════════════════════════════════════
-function getDB() {
+function getDB_() {
   var props = PropertiesService.getScriptProperties(), id = props.getProperty("DB_ID_V5"), ss;
   if(id) {
     ss = SpreadsheetApp.openById(id);
@@ -200,13 +200,13 @@ function getDB() {
 // Exécuter une fois depuis l’éditeur Apps Script pour autoriser Sheets
 // et créer la base lorsque le projet n’est lié à aucune feuille.
 function setupDatabase() {
-  var ss = getDB();
-  getSheet(CFG.SHEETS.users);
-  getSheet(CFG.SHEETS.logs);
-  return { spreadsheetId:ss.getId(), url:ss.getUrl() };
+  var ss = getDB_();
+  getSheet_(CFG.SHEETS.users);
+  getSheet_(CFG.SHEETS.logs);
+  return { initialized:true };
 }
-function getSheet(name) {
-  var ss = getDB(), sh = ss.getSheetByName(name);
+function getSheet_(name) {
+  var ss = getDB_(), sh = ss.getSheetByName(name);
   if (!sh) {
     sh = ss.insertSheet(name);
     if (name === CFG.SHEETS.users) sh.appendRow(["id","email","hash","name","plan","sub_id","created","last_login","disabled"]);
@@ -232,7 +232,7 @@ function requireAdmin_(token) {
   if(String(token)!==expected) throw new Error("Session administrateur invalide. Reconnectez-vous.");
   return true;
 }
-function slog(id,a,d) { try{getSheet(CFG.SHEETS.logs).appendRow([new Date().toISOString(),id,a,d||""]);}catch(e){} }
+function slog(id,a,d) { try{getSheet_(CFG.SHEETS.logs).appendRow([new Date().toISOString(),id,a,d||""]);}catch(e){} }
 
 // ══════════════════════════════════════════════════════════════════
 //  AUTH
@@ -282,7 +282,7 @@ function loginUser(email, password) {
     clearAuthFailures_(email);
     return {user:{id:"admin",email:adminEmail,name:"Admin",plan:"admin"},token:tok(email,md5(password))};
   }
-  var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
+  var sh=getSheet_(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++){
     var row=rows[i], rowEmail=String(row[1]||"").trim().toLowerCase();
     if(rowEmail===email&&verifyPassword_(password,row[2])){
@@ -312,7 +312,7 @@ function registerUser(email, password, name) {
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(5000)) throw new Error("Service occupé, réessayez.");
   try {
-    var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
+    var sh=getSheet_(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
     for(var i=1;i<rows.length;i++) if(String(rows[i][1]||"").trim().toLowerCase()===email) throw new Error("Email déjà utilisé");
     var id=uid(), now=new Date().toISOString(), hash=makePasswordHash_(password);
     sh.appendRow([id,email,hash,name,"free","",now,now,false]);
@@ -376,7 +376,7 @@ function paypalSuccess_(subId, email) {
   if(!subId||!email) throw new Error("Données invalides");
   email=String(email).trim().toLowerCase();
   var verified=verifyPaypalSubscription_(subId,email);
-  var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
+  var sh=getSheet_(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++){
     if(String(rows[i][1]||"").toLowerCase()===email){
       if(rows[i][5]===subId&&rows[i][4]==="premium") return {upgraded:true,plan:"premium",verified:true};
@@ -392,7 +392,7 @@ function paypalSuccess_(subId, email) {
 // ══════════════════════════════════════════════════════════════════
 //  THE ODDS API — Cotes réelles
 // ══════════════════════════════════════════════════════════════════
-function fetchOdds(sportKey) {
+function fetchOdds_(sportKey) {
   var oddsKey = getSecret_("ODDS_KEY");
   if(!oddsKey) throw new Error("Clé Odds API manquante : définir la propriété de script ODDS_KEY.");
   var url = CFG.ODDS_BASE+"/sports/"+sportKey+"/odds/"
@@ -423,7 +423,7 @@ function fetchOdds(sportKey) {
     Logger.log("OddsAPI ["+sportKey+"]: "+d.length+" total → "+filtered.length+" dans les "+CFG.WINDOW_H+"h");
     return filtered;
   } catch(e){
-    Logger.log("fetchOdds ["+sportKey+"]: "+e);
+    Logger.log("fetchOdds_ ["+sportKey+"]: "+e);
     return [];
   }
 }
@@ -431,7 +431,7 @@ function fetchOdds(sportKey) {
 // ══════════════════════════════════════════════════════════════════
 //  GEMINI AI — Analyse de match
 // ══════════════════════════════════════════════════════════════════
-function geminiAnalyze(match) {
+function geminiAnalyze_(match) {
   var geminiKey = getSecret_("GEMINI_KEY");
   if(!geminiKey){
     return buildFallbackVerdict(match);
@@ -552,7 +552,7 @@ function getAllMatches_() {
   var all = [];
   for(var i=0; i<CFG.LEAGUES.length; i++){
     var lg  = CFG.LEAGUES[i];
-    var raw = fetchOdds(lg.key);
+    var raw = fetchOdds_(lg.key);
     for(var j=0; j<raw.length; j++){
       var enriched = enrichMatch(raw[j], lg);
       if(enriched) all.push(enriched);
@@ -860,7 +860,7 @@ function getMatchAnalysis_(matchId) {
   if(!m) throw new Error("Match introuvable (id: "+matchId+")");
 
   // Appel Gemini pour le verdict IA
-  var gemini = geminiAnalyze(m);
+  var gemini = geminiAnalyze_(m);
 
   // Aucun historique H2H n'est fourni par la source de cotes utilisée.
   return { match:m, gemini:gemini, h2h:{available:false,note:"Historique direct indisponible : aucune source H2H connectée."} };
@@ -916,19 +916,19 @@ function getSafeBets_() {
 //  ADMIN
 // ══════════════════════════════════════════════════════════════════
 function adminStats_() {
-  var rows=getSheet(CFG.SHEETS.users).getDataRange().getValues().slice(1);
+  var rows=getSheet_(CFG.SHEETS.users).getDataRange().getValues().slice(1);
   var p=rows.filter(function(r){return r[4]==="premium";}).length;
   return { total:rows.length, premium:p, free:rows.length-p,
     disabled:rows.filter(function(r){return r[8]===true||r[8]==="TRUE";}).length,
     revenue:(p*9.99).toFixed(2) };
 }
 function adminUsers_() {
-  return getSheet(CFG.SHEETS.users).getDataRange().getValues().slice(1).map(function(r){
+  return getSheet_(CFG.SHEETS.users).getDataRange().getValues().slice(1).map(function(r){
     return { id:r[0], email:r[1], name:r[3], plan:r[4]||"free", created:r[6], lastLogin:r[7], disabled:r[8]===true||r[8]==="TRUE" };
   });
 }
 function adminDisable_(userId, disabled) {
-  var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
+  var sh=getSheet_(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++) if(rows[i][0]===userId){ sh.getRange(i+1,9).setValue(disabled); return{done:true}; }
   throw new Error("User not found");
 }
@@ -943,7 +943,7 @@ function cl(n,mn,mx){return Math.max(mn,Math.min(mx,n));}
 function hs(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h=h&h;}return Math.abs(h);}
 
 // ── Test runner ─────────────────────────────────────────────────
-function testSetup(){
+function testSetup_(){
   Logger.log("=== OddsLab v6 TEST ===");
   Logger.log("Gemini configuré: "+(getSecret_("GEMINI_KEY")?"OUI":"NON — définir la propriété GEMINI_KEY (Gemini est facultatif)."));
   try {
