@@ -1,6 +1,6 @@
 # OddsLab Intelligence
 
-OddsLab affiche les matchs à venir et les cotes disponibles depuis The Odds API. Le moteur Poisson transforme les cotes 1X2 et, quand ils sont fournis, les totaux en probabilités et scores estimés. Ce ne sont pas des scores garantis, un classement officiel, une note Elo ou une preuve de rentabilité. Le projet ne dispose pas encore d’un historique de résultats permettant de mesurer sa précision ni de faire un backtest.
+OddsLab affiche les matchs à venir et les cotes disponibles depuis The Odds API. Le moteur Poisson transforme les cotes 1X2 et, quand ils sont fournis, les totaux en probabilités et scores estimés. Ce ne sont pas des scores garantis, un classement officiel, une note Elo ou une preuve de rentabilité. Les probabilités sont ajustées aux mêmes cotes que le comparateur examine : un écart modèle/marché n’est donc pas une preuve d’avantage indépendant. Le projet ne dispose pas encore d’un historique de résultats permettant de mesurer sa précision ni de faire un backtest.
 
 ## Architecture
 
@@ -42,7 +42,7 @@ Le workflow `.github/workflows/build-apk.yml` crée un APK uniquement lorsque le
 ## Limites à régler avant un lancement commercial
 
 - Le profil gratuit est limité à huit compétitions populaires, actualisées environ toutes les 26 heures. Avec une région et deux marchés (`h2h`, `totals`), cela représente au plus environ 464 crédits sur un mois de 31 jours, sur une allocation de 500, et laisse une marge pour les essais et nouvelles tentatives. Le coût réel dépend des marchés présents dans les réponses; voir la [documentation de quota The Odds API](https://the-odds-api.com/liveapi/guides/v4/).
-- Les instantanés de cotes sont enregistrés dans la feuille `OddsCache_v1` pour tenir la cadence quotidienne malgré la durée maximale de six heures du cache Apps Script. Si l’API est indisponible, les dernières cotes enregistrées sont conservées et signalées comme anciennes.
+- Les instantanés de cotes sont enregistrés dans la feuille `OddsCache_v1` pour tenir la cadence de 26 heures malgré la durée maximale de six heures du cache Apps Script. Chaque instantané est lié à une empreinte de la clé (jamais à la clé elle-même), pour invalider automatiquement les caches quand la clé change. Si l’API est indisponible, les dernières cotes enregistrées sont conservées et signalées comme anciennes.
 - Les routes scanner et marchés de buts vérifient le forfait depuis le serveur; l’interface ne peut pas accorder premium en changeant le stockage local. La limite « 5 analyses/jour » reste locale au navigateur et n’est pas un quota serveur robuste; ne la présentez pas comme une protection anti-abus.
 - L’activation PayPal est vérifiée côté serveur, et le forfait actif est revérifié à l’usage (état mis en cache 5 minutes). Il reste à ajouter une notification PayPal pour une révocation immédiate, ainsi qu’un processus de remboursement/annulation.
 - Les pages backtest, attribution SHAP, Elo et classements ne sont pas implémentées faute de sources dédiées. Elles sont maintenant signalées comme indisponibles au lieu d’afficher des chiffres fictifs.

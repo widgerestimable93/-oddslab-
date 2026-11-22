@@ -169,7 +169,7 @@ function dashboardForUser_(dashboard,user) {
   if(user&&(user.plan==="premium"||user.plan==="admin")) {dashboard.accountPlan=user.plan;return dashboard;}
   dashboard=JSON.parse(JSON.stringify(dashboard));
   dashboard.accountPlan=user&&user.plan||"free";
-  dashboard.valueBets=0; dashboard.traps=0; dashboard.safeBetsCount=0; dashboard.avgROI=0;
+  dashboard.valueBets=0; dashboard.traps=0; dashboard.safeBetsCount=0;
   dashboard.topValueBets=[]; dashboard.topSafeBets=[];
   dashboard.allMatches=matchesForUser_(dashboard.allMatches||[],user);
   dashboard.topAI=matchesForUser_(dashboard.topAI||[],user);
@@ -218,7 +218,11 @@ function getSheet_(name) {
     sh = ss.insertSheet(name);
     if (name === CFG.SHEETS.users) sh.appendRow(["id","email","hash","name","plan","sub_id","created","last_login","disabled"]);
     if (name === CFG.SHEETS.logs)  sh.appendRow(["ts","uid","action","detail"]);
-    if (name === CFG.SHEETS.oddsCache) sh.appendRow(["leagueKey","fetchedAtMs","matchId","matchJson"]);
+    if (name === CFG.SHEETS.oddsCache) sh.appendRow(["leagueKey","fetchedAtMs","matchId","matchJson","keyTag"]);
+    sh.getRange("1:1").setFontWeight("bold");
+  }
+  if(name===CFG.SHEETS.oddsCache&&sh.getLastColumn()<5){
+    sh.getRange(1,1,1,5).setValues([["leagueKey","fetchedAtMs","matchId","matchJson","keyTag"]]);
     sh.getRange("1:1").setFontWeight("bold");
   }
   return sh;
@@ -247,6 +251,11 @@ function slog_(id,a,d) { try{getSheet_(CFG.SHEETS.logs).appendRow([new Date().to
 // ══════════════════════════════════════════════════════════════════
 function getSecret_(name) {
   return PropertiesService.getScriptProperties().getProperty(name) || "";
+}
+function oddsKeyTag_() {
+  var key=getSecret_("ODDS_KEY");
+  if(!key) return "missing";
+  return digestHex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,key)).slice(0,16);
 }
 
 function authFailKey_(email) { return "auth_fail_"+md5(String(email||"").toLowerCase()); }
@@ -558,9 +567,9 @@ function buildFallbackVerdict(match) {
 function loadOddsSnapshots_() {
   var sheet=getSheet_(CFG.SHEETS.oddsCache), values=sheet.getDataRange().getValues(), records={};
   for(var i=1;i<values.length;i++){
-    var key=String(values[i][0]||""), fetchedAt=Number(values[i][1]||0);
+    var key=String(values[i][0]||""), fetchedAt=Number(values[i][1]||0), keyTag=String(values[i][4]||"");
     if(!key||!fetchedAt) continue;
-    if(!records[key]||fetchedAt>records[key].fetchedAt) records[key]={fetchedAt:fetchedAt,matches:[]};
+    if(!records[key]||fetchedAt>records[key].fetchedAt) records[key]={fetchedAt:fetchedAt,keyTag:keyTag,matches:[]};
     if(fetchedAt===records[key].fetchedAt&&values[i][3]){
       try { records[key].matches.push(JSON.parse(String(values[i][3]))); }
       catch(e) { Logger.log("Instantané Odds API illisible pour "+key); }
@@ -570,14 +579,14 @@ function loadOddsSnapshots_() {
 }
 
 function saveOddsSnapshots_(sheet, records) {
-  var rows=[["leagueKey","fetchedAtMs","matchId","matchJson"]];
+  var rows=[["leagueKey","fetchedAtMs","matchId","matchJson","keyTag"]];
   Object.keys(records).forEach(function(key){
     var record=records[key], matches=record.matches||[];
-    if(!matches.length) rows.push([key,record.fetchedAt,"",""]);
-    else matches.forEach(function(match){rows.push([key,record.fetchedAt,match.id||"",JSON.stringify(match)]);});
+    if(!matches.length) rows.push([key,record.fetchedAt,"","",record.keyTag||""]);
+    else matches.forEach(function(match){rows.push([key,record.fetchedAt,match.id||"",JSON.stringify(match),record.keyTag||""]);});
   });
   sheet.clearContents();
-  sheet.getRange(1,1,rows.length,4).setValues(rows);
+  sheet.getRange(1,1,rows.length,5).setValues(rows);
 }
 
 function addSnapshotMatches_(target, record, stale) {
@@ -590,8 +599,9 @@ function addSnapshotMatches_(target, record, stale) {
 }
 
 function getAllMatches_() {
-  var cKey = "all_matches_daily8_v1";
-  var errorKey = "all_matches_daily8_error_v1";
+  var keyTag=oddsKeyTag_();
+  var cKey = "all_matches_daily8_"+keyTag+"_v2";
+  var errorKey = "all_matches_daily8_error_"+keyTag+"_v2";
   var cache = CacheService.getScriptCache();
   var hit = cache.get(cKey);
   if(hit){ try{ return JSON.parse(hit); }catch(e){} }
@@ -611,14 +621,14 @@ function getAllMatches_() {
     var refreshMs=CFG.ODDS_REFRESH_H*3600*1000;
     for(var i=0;i<CFG.LEAGUES.length;i++){
       var lg=CFG.LEAGUES[i], record=records[lg.key];
-      if(record&&now-record.fetchedAt<refreshMs){ addSnapshotMatches_(all,record,false); continue; }
+      if(record&&record.keyTag===keyTag&&now-record.fetchedAt<refreshMs){ addSnapshotMatches_(all,record,false); continue; }
       try {
         var raw=fetchOdds_(lg.key), enriched=[];
         for(var j=0;j<raw.length;j++){
           var match=enrichMatch(raw[j],lg);
           if(match) enriched.push(match);
         }
-        record={fetchedAt:now,matches:enriched};
+        record={fetchedAt:now,keyTag:keyTag,matches:enriched};
         records[lg.key]=record;
         changed=true;
         addSnapshotMatches_(all,record,false);
@@ -648,7 +658,7 @@ function getAllMatches_() {
 
     cache.remove(errorKey);
     all.sort(function(a,b){return new Date(a.time)-new Date(b.time);});
-    Logger.log("Total matchs enrichis: "+all.length+"; cache quotidien; erreurs API: "+failures.length);
+    Logger.log("Total matchs enrichis: "+all.length+"; cache persistant; erreurs API: "+failures.length);
     try{cache.put(cKey,JSON.stringify(all),CFG.CACHE_TTL);}catch(e){}
     return all;
   } finally {
@@ -666,7 +676,7 @@ function getLeagueMatches_(leagueKey) {
 //  ENRICHISSEMENT — pipeline analytique
 // ══════════════════════════════════════════════════════════════════
 function enrichMatch(raw, lg) {
-  if(!raw || !raw.bookmakers || raw.bookmakers.length === 0) return null;
+  if(!raw || !/^[A-Za-z0-9_-]{1,80}$/.test(String(raw.id||"")) || !raw.bookmakers || raw.bookmakers.length === 0) return null;
 
   var odds  = extractOdds(raw.bookmakers, raw.home_team, raw.away_team);
   if(!(odds.h>1&&odds.d>1&&odds.a>1)) return null; // 1X2 complet indispensable
@@ -869,9 +879,9 @@ function computeAIScore(xg, probs, odds, raw) {
 // ══════════════════════════════════════════════════════════════════
 function computeValue(probs, odds) {
   var res={};
-  if(odds.h>1) res.h={ val:r3(probs.h*odds.h-1), trueP:probs.h, bookP:r3(1/odds.h), odds:odds.h };
-  if(odds.d>1) res.d={ val:r3(probs.d*odds.d-1), trueP:probs.d, bookP:r3(1/odds.d), odds:odds.d };
-  if(odds.a>1) res.a={ val:r3(probs.a*odds.a-1), trueP:probs.a, bookP:r3(1/odds.a), odds:odds.a };
+  if(odds.h>1) res.h={ val:r3(probs.h*odds.h-1), modelP:probs.h, bookP:r3(1/odds.h), odds:odds.h };
+  if(odds.d>1) res.d={ val:r3(probs.d*odds.d-1), modelP:probs.d, bookP:r3(1/odds.d), odds:odds.d };
+  if(odds.a>1) res.a={ val:r3(probs.a*odds.a-1), modelP:probs.a, bookP:r3(1/odds.a), odds:odds.a };
   var best=null, bk=null;
   Object.keys(res).forEach(function(k){ if(!best||res[k].val>best.val){best=res[k];bk=k;} });
   return { detected:best&&best.val>0.04, pct:best?Math.round(best.val*1000)/10:0, best:bk, data:res };
@@ -966,7 +976,6 @@ function getDashboard_() {
   var sbAll = [];
   all.forEach(function(m){ (m.safeBets||[]).forEach(function(sb){ sbAll.push({match:m,bet:sb}); }); });
   sbAll.sort(function(a,b){return b.bet.confidence-a.bet.confidence;});
-  var avgROI = vbs.length ? r2(vbs.reduce(function(s,m){return s+(m.value.pct||0);},0)/vbs.length) : 0;
   var byLeague={};
   all.forEach(function(m){
     var l=m.league;
@@ -980,7 +989,6 @@ function getDashboard_() {
     safeBetsCount:sbAll.length,
     staleOddsCount:staleMatches.length,
     staleOddsLeagues:Object.keys(staleLeagues),
-    avgROI:       avgROI,
     topAI:        all.slice().sort(function(a,b){return b.aiScore.score-a.aiScore.score;}).slice(0,6),
     topValueBets: vbs.sort(function(a,b){return b.value.pct-a.value.pct;}).slice(0,8),
     topSafeBets:  sbAll.slice(0,8),

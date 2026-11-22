@@ -43,6 +43,10 @@ assert.ok(!githubHostPattern.test("script.google.com"), "PWA wrapper must not in
 assert.doesNotMatch(html, /71\.8%|xA · PPDA · Elo|Expected Value Scanner/, "remove unsupported metrics and stale feature labels");
 assert.doesNotMatch(html, /xG Timeline|Confidence intervals|Confiance ≥60%|Anomalies ML|xG:/, "avoid claiming unavailable features or mislabeled market estimates");
 assert.match(html, /id="oddsNotice"/, "the UI should warn when displaying stale odds snapshots");
+assert.match(html, /data-match-id=/, "match navigation should use escaped data attributes");
+assert.doesNotMatch(html, /onclick="openCard|onclick="togPick|onclick="admTog/, "API and account values should not be interpolated into inline JavaScript handlers");
+assert.match(html, /esc\(m\.home/, "external team names should be HTML-escaped before rendering");
+assert.match(html, /Écart indicatif seulement[\s\S]*non backtesté/, "model-market differences should not be presented as validated value bets");
 assert.match(html, /8 grandes ligues/);
 assert.match(html, /Actualisation<\/span><span class="mib-val c">environ toutes les 26 h/);
 
@@ -93,10 +97,26 @@ assert.match(code, /sub\.status===\"ACTIVE\"/, "PayPal activation must verify ac
 assert.match(code, /PAYPAL_CLIENT_SECRET/, "PayPal secret must remain server-side");
 assert.match(code, /function getDB_\(/);
 assert.match(code, /function fetchOdds_\(/);
+assert.match(code, /!\/\^\[A-Za-z0-9_-\]\{1,80\}\$\/\.test\(String\(raw\.id\|\|""\)\)/, "provider event IDs should be restricted before reaching client attributes");
 assert.match(code, /WINDOW_H:\s*168/, "upcoming match search should cover seven days");
 assert.match(code, /The Odds API HTTP /, "API HTTP failures should be surfaced instead of silently treated as no fixtures");
-assert.match(code, /all_matches_daily8_error_v1/, "daily free-tier errors should be cached to avoid repeated API calls");
+assert.match(code, /all_matches_daily8_error_/, "API errors should be cached per key so a replacement credential can retry immediately");
 assert.match(code, /OddsCache_v1/, "daily odds snapshots should persist beyond the Apps Script cache lifetime");
+assert.match(code, /function oddsKeyTag_\(/, "changing the Odds API key should invalidate in-memory data caches");
+assert.match(code, /keyTag===keyTag/, "snapshots from a previous API credential should be refreshed before being treated as current");
+let fakeApiKey = "first-placeholder-key";
+ctx.PropertiesService = { getScriptProperties: () => ({ getProperty: (name) => name === "ODDS_KEY" ? fakeApiKey : "" }) };
+ctx.Utilities = {
+  DigestAlgorithm: { SHA_256: "SHA_256" },
+  computeDigest: (_algorithm, value) => {
+    let hash = 2166136261;
+    for (const char of String(value)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+    return [hash >>> 24, hash >>> 16, hash >>> 8, hash].map(byte => (byte & 255) > 127 ? (byte & 255) - 256 : byte & 255);
+  }
+};
+const firstKeyTag = ctx.oddsKeyTag_();
+fakeApiKey = "second-placeholder-key";
+assert.notEqual(ctx.oddsKeyTag_(), firstKeyTag, "replacement API keys must produce a distinct cache namespace");
 assert.doesNotMatch(code, /function (getAllMatches|getDashboard|fetchOdds|geminiAnalyze)\(/, "sensitive data builders should not be exposed to google.script.run");
 assert.equal(fs.existsSync(path.join(root, "android/app/keystore.jks")), false, "signing keystore must not be tracked in the working tree");
 assert.doesNotMatch(html, /71\.8%|YOUR_PAYPAL_CLIENT_ID|YOUR_PAYPAL_PLAN_ID/, "remove fake accuracy and payment placeholders");

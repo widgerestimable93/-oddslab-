@@ -723,12 +723,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="kpi-row">
         <div class="kpi c"><div class="kpi-ico">⚽</div><div class="kpi-lbl">Matchs Analysés</div><div class="kpi-val" id="k-m">–</div><div class="kpi-sub">modèle Poisson calibré aux cotes</div></div>
         <div class="kpi p"><div class="kpi-ico">🎯</div><div class="kpi-lbl">Scores estimés</div><div class="kpi-val" id="k-p">–</div><div class="kpi-sub">Probabilité du score ≥10%</div></div>
-        <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Écarts modèle / marché</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">EV théorique</div></div>
+        <div class="kpi g"><div class="kpi-ico">📊</div><div class="kpi-lbl">Écarts modèle / marché</div><div class="kpi-val" id="k-v">–</div><div class="kpi-sub">Indicateur théorique · non backtesté</div></div>
         <div class="kpi o"><div class="kpi-ico">🛡</div><div class="kpi-lbl">Marchés de buts listés</div><div class="kpi-val" id="k-s">–</div><div class="kpi-sub">Probabilités Poisson estimées</div></div>
         <div class="kpi r"><div class="kpi-ico">⚠</div><div class="kpi-lbl">Alertes de marché</div><div class="kpi-val" id="k-t">–</div><div class="kpi-sub">Écarts détectés, non validés par backtest</div></div>
       </div>
       <div class="sec"><div class="sh"><div class="st">🤖 Top Prédictions Poisson <span class="sc" id="ct-tp">0</span></div><span class="sm" onclick="nav('predictions')">Prediction Engine →</span></div><div class="mg" id="g-tp"></div></div>
-      <div class="sec"><div class="sh"><div class="st">📊 Écarts modèle / marché <span class="sc" id="ct-vb">0</span></div><span class="sm" onclick="nav('scanner')">Comparateur →</span></div><div class="mg" id="g-vb"></div></div>
+      <div class="sec"><div class="sh"><div class="st">📊 Écarts modèle / marché <span class="sc" id="ct-vb">0</span></div><span class="sm" onclick="nav('scanner')">Comparateur →</span></div><div class="sm">Indications issues d’un modèle ajusté aux cotes; précision non mesurée.</div><div class="mg" id="g-vb"></div></div>
       <div class="sec"><div class="sh"><div class="st">🛡 Probabilités buts <span class="sc" id="ct-sb">0</span></div><span class="sm" onclick="nav('safebets')">Voir tout →</span></div><div class="sb-list" id="g-sb"></div></div>
       <div class="sec"><div class="sh"><div class="st">🗂 Tous les matchs <span class="sc" id="ct-all">0</span></div></div><div class="mg" id="g-all"></div></div>
     </div>
@@ -746,7 +746,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div id="scanGate"></div>
       <div id="scanCont">
         <div class="sec"><div class="sh"><div class="st">📊 Écart de valeur théorique <span class="sc" id="ct-scan">0</span></div></div>
-        <div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>EV théorique</th><th>Score probable</th><th>Issue</th><th>Sources</th><th>Cote</th><th>Modèle vs marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
+        <div class="sm" style="margin-bottom:10px">Écart indicatif seulement : le modèle est ajusté aux cotes comparées. Aucun rendement ni avantage n’a été validé par backtest.</div><div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Match</th><th>Écart indicatif</th><th>Score probable</th><th>Issue</th><th>Sources</th><th>Cote</th><th>Modèle vs marché</th></tr></thead><tbody id="scan-body"></tbody></table></div></div>
       </div>
     </div>
 
@@ -1043,7 +1043,7 @@ function renderDashboard(){
   var notice=$("oddsNotice"), staleNames=d.staleOddsLeagues||[];
   if(d.staleOddsCount&&staleNames.length){
     notice.style.display="block";
-    notice.textContent="⚠ The Odds API est indisponible. Dernières cotes conservées pour: "+staleNames.join(", ")+". Ces données peuvent dater de plus de 24 h.";
+    notice.textContent="⚠ The Odds API est indisponible. Dernières cotes conservées pour: "+staleNames.join(", ")+". La cadence de mise à jour a été dépassée.";
   } else { notice.style.display="none"; notice.textContent=""; }
   var vbs=all.filter(function(m){return m.value&&m.value.detected;});
   var traps=all.filter(function(m){return m.trap&&m.trap.detected;});
@@ -1087,9 +1087,9 @@ function mkCard(m){
     +(pred.pct?'<div class="pred-sep"></div>':"")
     +'<div class="pred-xg">Buts attendus estimés: <b>'+((xg.home||0).toFixed(1))+'</b> — <b>'+((xg.away||0).toFixed(1))+'</b></div>'
     +'<div class="pred-tags">'
-    +(v.detected?'<span class="chip vb">EV théorique +'+v.pct+'%</span>':"")
-    +(m.trap&&m.trap.detected?'<span class="chip trap">⚠ RISK</span>':"")
-    +(m.safeBets&&m.safeBets.length?'<span class="chip safe-c">🛡 STABLE</span>':"")
+    +(v.detected?'<span class="chip vb">Écart indicatif +'+v.pct+'%</span>':"")
+    +(m.trap&&m.trap.detected?'<span class="chip trap">⚠ À SURVEILLER</span>':"")
+    +(m.safeBets&&m.safeBets.length?'<span class="chip safe-c">PROBA MODÈLE</span>':"")
     +'</div></div>';
 
   var chips='<div class="mc-chips">'
@@ -1099,15 +1099,15 @@ function mkCard(m){
 
     +'</div>';
 
-  return '<div class="mc '+confCls+'" onclick="openCard(\''+m.id+'\')">'
+  return '<div class="mc '+confCls+'" data-match-id="'+esc(m.id)+'" tabindex="0" role="button">'
     +'<div class="mc-bar '+confCls+'"></div>'
-    +'<div class="mc-league"><div class="lc-dot" style="background:'+(m.leagueColor||"#3a4a5e")+'"></div>'+(m.flag||"")+" "+(m.league||"")
+    +'<div class="mc-league"><div class="lc-dot" style="background:'+( /^#[0-9a-f]{6}$/i.test(m.leagueColor||"")?m.leagueColor:"#3a4a5e")+'"></div>'+(m.flag||"")+" "+esc(m.league||"")
     +'<span class="mc-time-top">'+dStr+' '+tStr+'</span></div>'
     +'<div class="mc-body">'
     +'<div class="mc-teams">'
-    +'<div class="mc-team home"><div class="mc-tn">'+(m.home||"–")+'</div><div class="mc-form">Buts attendus: '+((xg.home||0).toFixed(1))+'</div></div>'
+    +'<div class="mc-team home"><div class="mc-tn">'+esc(m.home||"–")+'</div><div class="mc-form">Buts attendus: '+((xg.home||0).toFixed(1))+'</div></div>'
     +'<div class="mc-center"><div class="mc-vs">VS</div><div style="font-family:var(--fd);font-size:9px;color:var(--t4)">'+tStr+'</div></div>'
-    +'<div class="mc-team away"><div class="mc-tn">'+(m.away||"–")+'</div><div class="mc-form">Buts attendus: '+((xg.away||0).toFixed(1))+'</div></div>'
+    +'<div class="mc-team away"><div class="mc-tn">'+esc(m.away||"–")+'</div><div class="mc-form">Buts attendus: '+((xg.away||0).toFixed(1))+'</div></div>'
     +'</div>'
     +oddsHtml+'</div>'
     +predHtml
@@ -1120,18 +1120,34 @@ function mkCard(m){
 
 function openCard(id){if(!dailyOk())return;nav("analysis",id);}
 
+document.addEventListener("click",function(event){
+  var card=event.target.closest("[data-match-id]");
+  if(card) openCard(card.getAttribute("data-match-id"));
+  var add=event.target.closest("[data-ticket-toggle]");
+  if(add){event.preventDefault();togPick(add.getAttribute("data-ticket-toggle"),add.getAttribute("data-ticket-label")||"",add.getAttribute("data-ticket-odd"));}
+  var remove=event.target.closest("[data-ticket-remove]");
+  if(remove){event.preventDefault();togPick(remove.getAttribute("data-ticket-remove"),"",0);}
+  var admin=event.target.closest("[data-admin-user-id]");
+  if(admin){event.preventDefault();admTog(admin.getAttribute("data-admin-user-id"),admin.getAttribute("data-admin-disabled")==="true");}
+});
+document.addEventListener("keydown",function(event){
+  if(event.key!=="Enter"&&event.key!==" ")return;
+  var card=event.target.closest("[data-match-id]");
+  if(card){event.preventDefault();openCard(card.getAttribute("data-match-id"));}
+});
+
 function mkSbRow(item){
   var m=item.match||item,sb=item.bet||item;
   var rk=sb.risk||"MEDIUM";
   var lblMap={OVER_1_5:"Prob. >1.5 buts",OVER_2_5:"Prob. >2.5 buts",BTTS:"BTTS",DC_1X:"Double chance 1X",DC_X2:"Double chance X2",UNDER_3_5:"Prob. <3.5 buts"};
   var lbl=lblMap[sb.type]||sb.label||sb.type||"Forecast";
-  return '<div class="sb-row" onclick="openCard(\''+(m.id||"")+'\')">'+
+  return '<div class="sb-row" data-match-id="'+esc(m.id||"")+'" tabindex="0" role="button">'+
     '<div class="sb-ico '+rk+'">'+(rk==="LOW"?"🟢":rk==="MEDIUM"?"🟡":"🔴")+'</div>'
-    +'<div class="sb-info"><div class="sb-match">'+(m.home||"?")+" vs "+(m.away||"?")+'</div>'
-    +'<div class="sb-type">'+(sb.icon||"")+" "+lbl+" · "+(m.league||"")+'</div></div>'
+    +'<div class="sb-info"><div class="sb-match">'+esc(m.home||"?")+" vs "+esc(m.away||"?")+'</div>'
+    +'<div class="sb-type">'+esc(sb.icon||"")+" "+esc(lbl)+" · "+esc(m.league||"")+'</div></div>'
     +'<div class="sb-meta"><div class="sb-conf '+rk+'">'+(sb.confidence||0)+'%</div>'
     +'<div class="sb-odds">@'+(sb.odds||"–")+'</div>'
-    +'<span class="chip '+(rk==="LOW"?"high-conf":rk==="MEDIUM"?"med-conf":"low-conf")+'">'+rk+' RISK</span>'
+    +'<span class="chip '+(rk==="LOW"?"high-conf":rk==="MEDIUM"?"med-conf":"low-conf")+'">'+(rk==="LOW"?"Prob. modèle élevée":rk==="MEDIUM"?"Prob. modèle intermédiaire":"Prob. modèle")+'</span>'
     +'</div></div>';
 }
 
@@ -1155,17 +1171,17 @@ function renderScanPage(){
   var vbs=all.filter(function(m){return m.value&&m.value.detected;}).sort(function(a,b){return b.value.pct-a.value.pct;});
   $("ct-scan").textContent=vbs.length;
   var tb=$("scan-body");
-  if(!vbs.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--t3);padding:28px">Aucune opportunité détectée</td></tr>';return;}
+  if(!vbs.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--t3);padding:28px">Aucun écart indicatif détecté</td></tr>';return;}
   tb.innerHTML=vbs.map(function(m){
     var v=m.value||{},ai=m.aiScore||{},out=v.best||"h",vd=v.data&&v.data[out]||{};
     var aiP=Math.round((m.probs&&m.probs[out]||0)*100),bkP=Math.round((vd.bookP||0)*100);
     var lbl=out==="h"?m.home:out==="a"?m.away:"Nul";
     var pred=m.prediction||{};
-    return '<tr onclick="openCard(\''+m.id+'\')">'
-      +'<td><div class="st-m">'+(m.home||"?")+" vs "+(m.away||"?")+'</div><div class="st-l">'+(m.flag||"")+" "+(m.league||"")+'</div></td>'
+    return '<tr data-match-id="'+esc(m.id)+'" tabindex="0" role="button">'
+      +'<td><div class="st-m">'+esc(m.home||"?")+" vs "+esc(m.away||"?")+'</div><div class="st-l">'+(m.flag||"")+" "+esc(m.league||"")+'</div></td>'
       +'<td><div class="st-v">+'+v.pct+'%</div></td>'
       +'<td><div class="st-score">'+(pred.home!==undefined?pred.home+"-"+pred.away:"–")+'</div><div style="font-family:var(--fd);font-size:8px;color:var(--t4)">'+(pred.pct||"–")+'%</div></td>'
-      +'<td><span class="chip vb">'+lbl+'</span></td>'
+      +'<td><span class="chip vb">'+esc(lbl)+'</span></td>'
       +'<td><span class="bk-n">'+(m.bookCount||0)+'</span></td>'
       +'<td><span class="st-o">'+(vd.odds||"–")+'</span></td>'
       +'<td><div style="font-size:9px;color:var(--t3);margin-bottom:3px;font-family:var(--fd)">ML '+aiP+'% / Mkt '+bkP+'%</div><div class="bar-t"><div class="bar-f" style="width:'+Math.min(100,Math.abs(v.pct||0)*2)+'%"></div></div></td>'
@@ -1198,11 +1214,11 @@ function renderAnalysis(matchId){
   $("analysisBody").innerHTML=
     '<div class="a-hero">'
     +'<div class="ah-bar"></div>'
-    +'<div class="ah-meta"><div class="ah-lg-pill">'+(m.flag||"")+" "+(m.league||"")+'</div>'
+    +'<div class="ah-meta"><div class="ah-lg-pill">'+(m.flag||"")+" "+esc(m.league||"")+'</div>'
     +'<div class="ah-time-badge">'+tStr+'</div><span class="bk-n">'+(m.bookCount||0)+' sources de cotes</span></div>'
-    +'<div class="ah-matchup"><div class="ah-team home"><div class="ah-tn">'+(m.home||"")+'</div><div class="ah-odd">'+(odds.h||"–")+'</div></div>'
+    +'<div class="ah-matchup"><div class="ah-team home"><div class="ah-tn">'+esc(m.home||"")+'</div><div class="ah-odd">'+(odds.h||"–")+'</div></div>'
     +'<div class="ah-c">'+(odds.d?'<div class="ah-draw-l">Nul</div><div class="ah-draw-v">'+odds.d+'</div>':'<div class="ah-vs">VS</div>')+'</div>'
-    +'<div class="ah-team away"><div class="ah-tn">'+(m.away||"")+'</div><div class="ah-odd">'+(odds.a||"–")+'</div></div></div>'
+    +'<div class="ah-team away"><div class="ah-tn">'+esc(m.away||"")+'</div><div class="ah-odd">'+(odds.a||"–")+'</div></div></div>'
     +'<div class="ah-prediction"><div style="text-align:center"><div class="ah-pred-lbl">Score exact le plus probable</div>'
     +'<div class="ah-pred-score">'+(pred.home!==undefined?pred.home+" – "+pred.away:"—")+'</div></div>'
     +'<div class="ah-pred-meta"><div class="ah-pred-lbl">Probabilité du score</div><div class="ah-pred-pct">'+(pred.pct||0)+'%</div></div>'
@@ -1220,7 +1236,7 @@ function renderAnalysis(matchId){
 function renderPoissonMatrix(m){
   var mat=m.poisson,pred=m.prediction||{};
   if(!mat||!mat.length)return"";
-  var MAX=mat.length,home=m.home||"DOM",away=m.away||"EXT";
+  var MAX=mat.length,home=esc(m.home||"DOM"),away=esc(m.away||"EXT");
   var maxP=0;
   for(var i=0;i<MAX;i++)for(var j=0;j<MAX;j++)if(mat[i][j]>maxP)maxP=mat[i][j];
   var html='<div class="poisson-wrap"><div class="poisson-head">'
@@ -1321,12 +1337,12 @@ function renderMarketMatches(targetId){
   $(targetId).innerHTML='<div style="grid-column:1/-1" class="rc info"><div class="rc-ico">📡</div><div class="rc-title">Données réelles · The Odds API</div><div class="rc-body">'+all.length+' matchs avec cotes disponibles · mise à jour '+updated+' · La page affiche des matchs et probabilités de marché, pas un classement officiel ni un Elo.</div></div>'
     +names.map(function(name){
       var list=groups[name].matches.slice().sort(function(a,b){return new Date(a.time)-new Date(b.time);});
-      return'<div class="sec" style="min-width:0"><div class="sh"><div class="st">'+groups[name].flag+' '+name+' <span class="sc">'+list.length+'</span></div></div>'
+      return'<div class="sec" style="min-width:0"><div class="sh"><div class="st">'+groups[name].flag+' '+esc(name)+' <span class="sc">'+list.length+'</span></div></div>'
         +'<div class="scan-wrap"><table class="scan-tbl"><thead><tr><th>Début</th><th>Rencontre</th><th>Cotes 1X2</th><th>Score le plus probable</th><th>P(score)</th><th>Sources</th></tr></thead><tbody>'
         +list.map(function(m){
           var date=m.time?new Date(m.time):null,time=date&&!isNaN(date.getTime())?date.toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
           var p=marketProbabilities(m),pred=m.prediction||{},o=m.odds||{};
-          return'<tr><td>'+time+'</td><td><b>'+(m.home||"—")+'</b><br>vs '+(m.away||"—")+'</td>'
+          return'<tr><td>'+time+'</td><td><b>'+esc(m.home||"—")+'</b><br>vs '+esc(m.away||"—")+'</td>'
             +'<td>'+[o.h||"—",o.d||"—",o.a||"—"].join(" / ")+'</td>'
             +'<td><b style="color:var(--p)">'+(pred.home!==undefined?pred.home+"–"+pred.away:"—")+'</b></td>'
             +'<td>'+(pred.pct||0)+'%</td><td>'+(m.bookCount||0)+'</td></tr>';
@@ -1346,13 +1362,13 @@ function renderTicket(){
     var ai=m.aiScore||{};
     return'<div style="background:var(--card2);border:1px solid var(--edge);border-radius:9px;padding:9px 11px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-family:var(--fh);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.home||"?")+" vs "+(m.away||"?")+'</div>'
-      +'<div style="font-size:9px;color:var(--t3);margin-top:2px">'+(m.league||"")+(pred.home!==undefined?" · "+pred.home+"-"+pred.away:"")+'</div>'
+      +'<div style="font-family:var(--fh);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.home||"?")+" vs "+esc(m.away||"?")+'</div>'
+      +'<div style="font-size:9px;color:var(--t3);margin-top:2px">'+esc(m.league||"")+(pred.home!==undefined?" · "+pred.home+"-"+pred.away:"")+'</div>'
       +'<div style="font-size:9px;margin-top:2px;display:flex;gap:6px">'
-      +'<span style="color:var(--g)">→ '+lbl+' @ '+odd+'</span>'
+      +'<span style="color:var(--g)">→ '+esc(lbl)+' @ '+Number(odd||0).toFixed(2)+'</span>'
       +'<span style="font-family:var(--fd);color:var(--t3)">Modèle: '+ai.score+'/100</span>'
       +'</div></div>'
-      +'<button onclick="togPick(\''+m.id+'\',\''+lbl+'\','+odd+')" style="background:'+(inT?"var(--rd1)":"var(--cd1)")
+      +'<button data-ticket-toggle="'+esc(m.id)+'" data-ticket-label="'+esc(lbl)+'" data-ticket-odd="'+esc(odd)+'" style="background:'+(inT?"var(--rd1)":"var(--cd1)")
       +';border:1px solid '+(inT?"rgba(255,45,85,.25)":"var(--cd2)")
       +';border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer;color:'+(inT?"var(--r)":"var(--c)")
       +';font-family:var(--fh)">'+(inT?"✕ Retirer":"＋ Ajouter")+'</button></div>';
@@ -1363,7 +1379,7 @@ function togPick(id,lbl,odd){var idx=S.ticket.findIndex(function(t){return t.id=
 function renderPicks(){
   var l=$("tkt-picks");$("tkt-ct").textContent=S.ticket.length;
   if(!S.ticket.length){l.innerHTML=empty("📋","Ajoutez des sélections");$("tkt-sum").style.display="none";return;}
-  l.innerHTML=S.ticket.map(function(p){return'<div class="ti"><div class="ti-info"><div class="ti-m">'+p.label+'</div><div class="ti-b">→ '+p.label+'</div></div><div class="ti-odd">'+p.odd+'</div><span class="ti-rm" onclick="togPick(\''+p.id+'\',\'\',0)">✕</span></div>';}).join("");
+  l.innerHTML=S.ticket.map(function(p){return'<div class="ti"><div class="ti-info"><div class="ti-m">'+esc(p.label)+'</div><div class="ti-b">→ '+esc(p.label)+'</div></div><div class="ti-odd">'+Number(p.odd||0).toFixed(2)+'</div><button class="ti-rm" data-ticket-remove="'+esc(p.id)+'" type="button">✕</button></div>';}).join("");
   $("tkt-sum").style.display="";calcTkt();
 }
 function calcTkt(){
@@ -1396,8 +1412,8 @@ function loadAdmin(){
           +'<td style="font-family:var(--fd);font-size:9px;color:var(--t3)">'+(u.created?u.created.split("T")[0]:"–")+'</td>'
           +'<td style="font-family:var(--fd);font-size:9px;color:var(--t3)">'+(u.lastLogin?u.lastLogin.split("T")[0]:"–")+'</td>'
           +'<td>'+(!u.disabled
-            ?'<button class="btn-tiny dis" onclick="admTog(\''+u.id+'\',true)">Désactiver</button>'
-            :'<button class="btn-tiny en" onclick="admTog(\''+u.id+'\',false)">Réactiver</button>')+'</td></tr>';
+            ?'<button class="btn-tiny dis" data-admin-user-id="'+esc(u.id)+'" data-admin-disabled="true">Désactiver</button>'
+            :'<button class="btn-tiny en" data-admin-user-id="'+esc(u.id)+'" data-admin-disabled="false">Réactiver</button>')+'</td></tr>';
       }).join("")||'<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:20px">Aucun utilisateur</td></tr>';
     });
   });
