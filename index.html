@@ -713,7 +713,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
         <div class="mib-sep"></div>
         <div class="mib-item"><span>Compétitions</span><span class="mib-val c">25 ligues</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Fenêtre</span><span class="mib-val o">48 h</span></div>
+        <div class="mib-item"><span>Fenêtre</span><span class="mib-val o">7 jours</span></div>
         <div class="mib-sep"></div>
         <div class="mib-item"><span>Actualisation</span><span class="mib-val c">cache 15 min</span></div>
         <div class="mib-sep"></div>
@@ -1327,7 +1327,7 @@ function renderMarketMatches(targetId){
     var ib=LEAGUES.findIndex(function(l){return l.name===b;});
     return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b);
   });
-  if(!names.length){$(targetId).innerHTML=empty("📭","Aucun match avec cotes dans les prochaines 48 h.");return;}
+  if(!names.length){$(targetId).innerHTML=empty("📭","Aucun match avec cotes dans les 7 prochains jours.");return;}
   var updated=data.ts?new Date(data.ts).toLocaleString("fr-FR"):"—";
   $(targetId).innerHTML='<div style="grid-column:1/-1" class="rc info"><div class="rc-ico">📡</div><div class="rc-title">Données réelles · The Odds API</div><div class="rc-body">'+all.length+' matchs avec cotes disponibles · mise à jour '+updated+' · La page affiche des matchs et probabilités de marché, pas un classement officiel ni un Elo.</div></div>'
     +names.map(function(name){

@@ -79,6 +79,9 @@ assert.match(code, /sub\.status===\"ACTIVE\"/, "PayPal activation must verify ac
 assert.match(code, /PAYPAL_CLIENT_SECRET/, "PayPal secret must remain server-side");
 assert.match(code, /function getDB_\(/);
 assert.match(code, /function fetchOdds_\(/);
+assert.match(code, /WINDOW_H:\s*168/, "upcoming match search should cover seven days");
+assert.match(code, /The Odds API HTTP /, "API HTTP failures should be surfaced instead of silently treated as no fixtures");
+assert.match(code, /all_matches_empty_error_v1/, "empty/error responses should be briefly cached to avoid repeated quota use");
 assert.doesNotMatch(code, /function (getAllMatches|getDashboard|fetchOdds|geminiAnalyze)\(/, "sensitive data builders should not be exposed to google.script.run");
 assert.equal(fs.existsSync(path.join(root, "android/app/keystore.jks")), false, "signing keystore must not be tracked in the working tree");
 assert.doesNotMatch(html, /71\.8%|YOUR_PAYPAL_CLIENT_ID|YOUR_PAYPAL_PLAN_ID/, "remove fake accuracy and payment placeholders");

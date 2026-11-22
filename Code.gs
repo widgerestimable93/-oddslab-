@@ -20,8 +20,8 @@ var CFG = {
   ADMIN_PASS: "",
   PAYPAL_PLAN: "YOUR_PAYPAL_PLAN_ID",
 
-  // Fenêtre d'événements : uniquement les matchs à venir dans les 48h
-  WINDOW_H:    48,
+  // Fenêtre d'événements : matchs à venir dans les 7 prochains jours
+  WINDOW_H:    168,
 
   // ── Ligues ──────────────────────────────────────────────────────
   LEAGUES: [
@@ -428,8 +428,9 @@ function fetchOdds_(sportKey) {
     var resp = UrlFetchApp.fetch(url, { muteHttpExceptions:true });
     var code = resp.getResponseCode();
     if(code !== 200){
-      Logger.log("OddsAPI ["+sportKey+"] HTTP "+code+": "+resp.getContentText().substr(0,200));
-      return [];
+      var message="";
+      try { var apiError=JSON.parse(resp.getContentText()); message=apiError.message||apiError.error||""; } catch(parseError) {}
+      throw new Error("The Odds API HTTP "+code+" pour "+sportKey+(message?": "+message:""));
     }
     var d = JSON.parse(resp.getContentText());
     if(!Array.isArray(d)){ Logger.log("OddsAPI: réponse non-array pour "+sportKey); return []; }
@@ -445,8 +446,9 @@ function fetchOdds_(sportKey) {
     Logger.log("OddsAPI ["+sportKey+"]: "+d.length+" total → "+filtered.length+" dans les "+CFG.WINDOW_H+"h");
     return filtered;
   } catch(e){
-    Logger.log("fetchOdds_ ["+sportKey+"]: "+e);
-    return [];
+    var reason=String(e&&e.message||e).replace(/^Error:\s*/,"");
+    Logger.log("fetchOdds_ ["+sportKey+"]: "+reason);
+    throw new Error(reason);
   }
 }
 
@@ -567,14 +569,19 @@ function buildFallbackVerdict(match) {
 // ══════════════════════════════════════════════════════════════════
 function getAllMatches_() {
   var cKey = "all_matches_v6";
+  var errorKey = "all_matches_empty_error_v1";
   var cache = CacheService.getScriptCache();
   var hit = cache.get(cKey);
   if(hit){ try{ return JSON.parse(hit); }catch(e){} }
+  var cachedError=cache.get(errorKey);
+  if(cachedError) throw new Error(cachedError);
 
-  var all = [];
+  var all = [], failures=[];
   for(var i=0; i<CFG.LEAGUES.length; i++){
     var lg  = CFG.LEAGUES[i];
-    var raw = fetchOdds_(lg.key);
+    var raw;
+    try { raw=fetchOdds_(lg.key); }
+    catch(e) { failures.push(lg.name+": "+String(e&&e.message||e)); continue; }
     for(var j=0; j<raw.length; j++){
       var enriched = enrichMatch(raw[j], lg);
       if(enriched) all.push(enriched);
@@ -582,9 +589,19 @@ function getAllMatches_() {
   }
 
   if(all.length === 0){
-    throw new Error("Aucun événement à venir dans les "+CFG.WINDOW_H+"h. L'Odds API ne retourne pas de données pour les ligues configurées.");
+    var message;
+    if(failures.length===CFG.LEAGUES.length){
+      message="The Odds API a échoué pour toutes les ligues. "+failures.slice(0,3).join(" | ")+(failures.length>3?" | et "+(failures.length-3)+" autres erreurs":"");
+    } else if(failures.length){
+      message="Aucun match à venir dans les "+CFG.WINDOW_H+" prochaines heures. "+failures.length+" ligue(s) ont aussi échoué: "+failures.slice(0,3).join(" | ");
+    } else {
+      message="Aucun match avec cotes 1X2 dans les "+CFG.WINDOW_H+" prochaines heures. Réessaie plus tard.";
+    }
+    try { cache.put(errorKey,message,120); } catch(cacheError) {}
+    throw new Error(message);
   }
 
+  cache.remove(errorKey);
   all.sort(function(a,b){ return new Date(a.time)-new Date(b.time); });
   Logger.log("Total matchs enrichis: "+all.length);
   try{ cache.put(cKey, JSON.stringify(all), CFG.CACHE_TTL); }catch(e){}
