@@ -42,9 +42,23 @@ assert.ok(githubHostPattern.test("widgerestimable93.github.io"), "PWA wrapper mu
 assert.ok(!githubHostPattern.test("script.google.com"), "PWA wrapper must not intercept Apps Script itself");
 assert.doesNotMatch(html, /71\.8%|xA · PPDA · Elo|Expected Value Scanner/, "remove unsupported metrics and stale feature labels");
 assert.doesNotMatch(html, /xG Timeline|Confidence intervals|Confiance ≥60%|Anomalies ML|xG:/, "avoid claiming unavailable features or mislabeled market estimates");
+assert.match(html, /id="oddsNotice"/, "the UI should warn when displaying stale odds snapshots");
+assert.match(html, /8 grandes ligues/);
+assert.match(html, /Actualisation<\/span><span class="mib-val c">quotidienne/);
 
 const ctx = {};
 vm.runInNewContext(code, ctx, { timeout: 5000 });
+assert.equal(ctx.CFG.LEAGUES.length, 8, "free plan should query eight selected competitions");
+const clientLeagues = html.match(/var LEAGUES=\[([\s\S]*?)\];/);
+assert.ok(clientLeagues, "the frontend should declare its competition filters");
+assert.equal(
+  JSON.stringify([...clientLeagues[1].matchAll(/\{key:"(?!all")([^"]+)"/g)].map(match => match[1])),
+  JSON.stringify(ctx.CFG.LEAGUES.map(league => league.key)),
+  "frontend filters and backend quotas should use the same competitions"
+);
+assert.equal(ctx.CFG.ODDS_REFRESH_H, 24, "each competition should refresh at most daily");
+assert.equal(ctx.CFG.CACHE_TTL, 21600, "Apps Script memory cache must respect its six-hour maximum");
+assert.equal(ctx.CFG.ERROR_CACHE_TTL, 3600, "API failures should be retried hourly, including after a quota reset");
 const odds = ctx.extractOdds([{
   markets: [
     { key: "h2h", outcomes: [
@@ -81,7 +95,8 @@ assert.match(code, /function getDB_\(/);
 assert.match(code, /function fetchOdds_\(/);
 assert.match(code, /WINDOW_H:\s*168/, "upcoming match search should cover seven days");
 assert.match(code, /The Odds API HTTP /, "API HTTP failures should be surfaced instead of silently treated as no fixtures");
-assert.match(code, /all_matches_empty_error_v1/, "empty/error responses should be briefly cached to avoid repeated quota use");
+assert.match(code, /all_matches_daily8_error_v1/, "daily free-tier errors should be cached to avoid repeated API calls");
+assert.match(code, /OddsCache_v1/, "daily odds snapshots should persist beyond the Apps Script cache lifetime");
 assert.doesNotMatch(code, /function (getAllMatches|getDashboard|fetchOdds|geminiAnalyze)\(/, "sensitive data builders should not be exposed to google.script.run");
 assert.equal(fs.existsSync(path.join(root, "android/app/keystore.jks")), false, "signing keystore must not be tracked in the working tree");
 assert.doesNotMatch(html, /71\.8%|YOUR_PAYPAL_CLIENT_ID|YOUR_PAYPAL_PLAN_ID/, "remove fake accuracy and payment placeholders");

@@ -609,7 +609,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
       <div class="auth-logo">
         <div class="auth-logo-mark">⚡</div>
         <div class="auth-logo-name">OddsLab<br><em>INTELLIGENCE</em></div>
-        <div class="auth-logo-tag">Modèle Poisson de score · estimations fondées sur les cotes v6.1</div>
+        <div class="auth-logo-tag">Modèle Poisson de score · estimations fondées sur les cotes v6.2</div>
         <div class="auth-badge-row">
           <span class="auth-badge ml">Poisson</span>
           <span class="auth-badge ai">Cotes marché</span>
@@ -693,7 +693,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
 
   <div class="topbar">
     <div class="tb-brand">OddsLab <em>INTELLIGENCE</em></div>
-    <div class="tb-version">v6.1</div>
+    <div class="tb-version">v6.2</div>
     <div class="live-pill"><div class="ld"></div>COTES</div>
     <div class="model-pill">🤖 Poisson · cotes marché</div>
     <div class="lg-tabs" id="lgTabs"></div>
@@ -711,14 +711,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
         <div class="mib-sep"></div>
         <div class="mib-item"><span>Source</span><span class="mib-val g">The Odds API</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Compétitions</span><span class="mib-val c">25 ligues</span></div>
+        <div class="mib-item"><span>Compétitions</span><span class="mib-val c">8 grandes ligues</span></div>
         <div class="mib-sep"></div>
         <div class="mib-item"><span>Fenêtre</span><span class="mib-val o">7 jours</span></div>
         <div class="mib-sep"></div>
-        <div class="mib-item"><span>Actualisation</span><span class="mib-val c">cache 15 min</span></div>
+        <div class="mib-item"><span>Actualisation</span><span class="mib-val c">quotidienne</span></div>
         <div class="mib-sep"></div>
         <div class="mib-item"><span>Score</span><span class="mib-val p">estimation probabiliste</span></div>
       </div>
+      <div id="oddsNotice" class="rc info" style="display:none;margin-bottom:12px"></div>
       <div class="kpi-row">
         <div class="kpi c"><div class="kpi-ico">⚽</div><div class="kpi-lbl">Matchs Analysés</div><div class="kpi-val" id="k-m">–</div><div class="kpi-sub">modèle Poisson calibré aux cotes</div></div>
         <div class="kpi p"><div class="kpi-ico">🎯</div><div class="kpi-lbl">Scores estimés</div><div class="kpi-val" id="k-p">–</div><div class="kpi-sub">Probabilité du score ≥10%</div></div>
@@ -905,24 +906,7 @@ var LEAGUES=[
   {key:"soccer_france_ligue_one",name:"Ligue 1",flag:"🇫🇷",color:"#0055A4"},
   {key:"soccer_uefa_champs_league",name:"Champions League",flag:"🌍",color:"#1A1F8C"},
   {key:"soccer_uefa_europa_league",name:"Europa League",flag:"🌍",color:"#F36F21"},
-  {key:"soccer_uefa_europa_conference_league",name:"Conference League",flag:"🌍",color:"#52A447"},
-  {key:"soccer_netherlands_eredivisie",name:"Eredivisie",flag:"🇳🇱",color:"#F36C21"},
-  {key:"soccer_portugal_primeira_liga",name:"Primeira Liga",flag:"🇵🇹",color:"#0B7A3B"},
   {key:"soccer_efl_champ",name:"Championship",flag:"🏴",color:"#314A93"},
-  {key:"soccer_spl",name:"Scottish Premiership",flag:"🏴",color:"#1B5E3C"},
-  {key:"soccer_turkey_super_league",name:"Süper Lig",flag:"🇹🇷",color:"#E30A17"},
-  {key:"soccer_saudi_arabia_pro_league",name:"Saudi Pro League",flag:"🇸🇦",color:"#006C35"},
-  {key:"soccer_usa_mls",name:"MLS",flag:"🇺🇸",color:"#173B65"},
-  {key:"soccer_brazil_campeonato",name:"Brasileirão",flag:"🇧🇷",color:"#138A45"},
-  {key:"soccer_argentina_primera_division",name:"Primera División",flag:"🇦🇷",color:"#75AADB"},
-  {key:"soccer_belgium_first_div",name:"Belgian Pro League",flag:"🇧🇪",color:"#D40000"},
-  {key:"soccer_austria_bundesliga",name:"Austrian Bundesliga",flag:"🇦🇹",color:"#ED2939"},
-  {key:"soccer_germany_bundesliga2",name:"2. Bundesliga",flag:"🇩🇪",color:"#D3010C"},
-  {key:"soccer_france_ligue_two",name:"Ligue 2",flag:"🇫🇷",color:"#0055A4"},
-  {key:"soccer_italy_serie_b",name:"Serie B",flag:"🇮🇹",color:"#024494"},
-  {key:"soccer_spain_segunda_division",name:"LaLiga 2",flag:"🇪🇸",color:"#EE8707"},
-  {key:"soccer_mexico_ligamx",name:"Liga MX",flag:"🇲🇽",color:"#006847"},
-  {key:"soccer_conmebol_copa_libertadores",name:"Copa Libertadores",flag:"🌎",color:"#F4B400"}
 ];
 
 window.addEventListener("load",function(){
@@ -1056,6 +1040,11 @@ function getFiltered(arr){
 function renderDashboard(){
   var d=S.data;if(!d)return;
   var all=getFiltered(d.allMatches||[]);
+  var notice=$("oddsNotice"), staleNames=d.staleOddsLeagues||[];
+  if(d.staleOddsCount&&staleNames.length){
+    notice.style.display="block";
+    notice.textContent="⚠ The Odds API est indisponible. Dernières cotes conservées pour: "+staleNames.join(", ")+". Ces données peuvent dater de plus de 24 h.";
+  } else { notice.style.display="none"; notice.textContent=""; }
   var vbs=all.filter(function(m){return m.value&&m.value.detected;});
   var traps=all.filter(function(m){return m.trap&&m.trap.detected;});
   var sbFlat=[];all.forEach(function(m){(m.safeBets||[]).forEach(function(sb){sbFlat.push({match:m,bet:sb});});});
@@ -1477,7 +1466,7 @@ function get(p,cb){
     new URLSearchParams((p||"").replace(/^\?/,"")).forEach(function(v,k){params[k]=v;});
     if(S.user){params.userId=S.user.id||"";params.userEmail=S.user.email||"";if(S.token)params.token=S.token;}
     google.script.run
-      .withSuccessHandler(function(data){cb({ok:true,data:data,ts:Date.now(),v:"6.1.0"});})
+      .withSuccessHandler(function(data){cb({ok:true,data:data,ts:Date.now(),v:"6.2.0"});})
       .withFailureHandler(function(err){cb({ok:false,error:err&&err.message||String(err)});})
       .routeGet(params);
     return;

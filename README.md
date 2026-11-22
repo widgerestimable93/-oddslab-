@@ -41,7 +41,8 @@ Le workflow `.github/workflows/build-apk.yml` crée un APK uniquement lorsque le
 
 ## Limites à régler avant un lancement commercial
 
-- Les cotes de 25 compétitions sont interrogées avec les marchés `h2h` et `totals`; surveillez le quota The Odds API.
+- Le profil gratuit est limité à huit compétitions populaires et une actualisation quotidienne. Avec une région et deux marchés (`h2h`, `totals`), le coût maximal estimé est de 16 crédits/jour, soit 480 sur 30 jours avec une allocation de 500. Le coût réel dépend des marchés présents dans les réponses; voir la [documentation de quota The Odds API](https://the-odds-api.com/liveapi/guides/v4/).
+- Les instantanés de cotes sont enregistrés dans la feuille `OddsCache_v1` pour tenir la cadence quotidienne malgré la durée maximale de six heures du cache Apps Script. Si l’API est indisponible, les dernières cotes enregistrées sont conservées et signalées comme anciennes.
 - Les routes scanner et marchés de buts vérifient le forfait depuis le serveur; l’interface ne peut pas accorder premium en changeant le stockage local. La limite « 5 analyses/jour » reste locale au navigateur et n’est pas un quota serveur robuste; ne la présentez pas comme une protection anti-abus.
 - L’activation PayPal est vérifiée côté serveur, et le forfait actif est revérifié à l’usage (état mis en cache 5 minutes). Il reste à ajouter une notification PayPal pour une révocation immédiate, ainsi qu’un processus de remboursement/annulation.
 - Les pages backtest, attribution SHAP, Elo et classements ne sont pas implémentées faute de sources dédiées. Elles sont maintenant signalées comme indisponibles au lieu d’afficher des chiffres fictifs.

@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  OddsLab ANALYTICS — Code.gs v6.1                               ║
+// ║  OddsLab ANALYTICS — Code.gs v6.2                               ║
 // ║  The Odds API (cotes réelles) · Gemini AI · Zéro démo           ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
@@ -12,8 +12,10 @@ var CFG = {
   GEMINI_URL:  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
 
   // ── App ─────────────────────────────────────────────────────────
-  VER:         "6.1.0",
-  CACHE_TTL:   900,    // 15 min pour les cotes
+  VER:         "6.2.0",
+  CACHE_TTL:   21600,  // cache mémoire GAS, maximum 6 h; instantané persistant en feuille
+  ERROR_CACHE_TTL: 3600, // retenter au plus tôt une heure après un quota/une panne
+  ODDS_REFRESH_H: 24,  // une actualisation par compétition et par jour
   CACHE_AI:    3600,   // 60 min pour l'analyse Gemini
   REGION:      "eu",
   ADMIN_EMAIL: "",
@@ -24,6 +26,7 @@ var CFG = {
   WINDOW_H:    168,
 
   // ── Ligues ──────────────────────────────────────────────────────
+  // Le forfait API gratuit (500 crédits/mois) couvre 8 compétitions x 2 marchés x 1 région x 30 jours = 480 crédits max.
   LEAGUES: [
     { key:"soccer_epl", name:"Premier League", country:"England", flag:"🏴", avgGoals:2.82, homeAdv:0.38 },
     { key:"soccer_spain_la_liga", name:"La Liga", country:"Spain", flag:"🇪🇸", avgGoals:2.60, homeAdv:0.36 },
@@ -32,28 +35,11 @@ var CFG = {
     { key:"soccer_france_ligue_one", name:"Ligue 1", country:"France", flag:"🇫🇷", avgGoals:2.55, homeAdv:0.35 },
     { key:"soccer_uefa_champs_league", name:"Champions League", country:"Europe", flag:"🌍", avgGoals:2.90, homeAdv:0.30 },
     { key:"soccer_uefa_europa_league", name:"Europa League", country:"Europe", flag:"🌍", avgGoals:2.80, homeAdv:0.30 },
-    { key:"soccer_uefa_europa_conference_league", name:"Conference League", country:"Europe", flag:"🌍", avgGoals:2.75, homeAdv:0.30 },
-    { key:"soccer_netherlands_eredivisie", name:"Eredivisie", country:"Netherlands", flag:"🇳🇱", avgGoals:3.10, homeAdv:0.35 },
-    { key:"soccer_portugal_primeira_liga", name:"Primeira Liga", country:"Portugal", flag:"🇵🇹", avgGoals:2.55, homeAdv:0.34 },
-    { key:"soccer_efl_champ", name:"Championship", country:"England", flag:"🏴", avgGoals:2.55, homeAdv:0.32 },
-    { key:"soccer_spl", name:"Scottish Premiership", country:"Scotland", flag:"🏴", avgGoals:2.80, homeAdv:0.34 },
-    { key:"soccer_turkey_super_league", name:"Süper Lig", country:"Turkey", flag:"🇹🇷", avgGoals:2.90, homeAdv:0.35 },
-    { key:"soccer_saudi_arabia_pro_league", name:"Saudi Pro League", country:"Saudi Arabia", flag:"🇸🇦", avgGoals:3.05, homeAdv:0.30 },
-    { key:"soccer_usa_mls", name:"MLS", country:"USA", flag:"🇺🇸", avgGoals:2.90, homeAdv:0.35 },
-    { key:"soccer_brazil_campeonato", name:"Brasileirão", country:"Brazil", flag:"🇧🇷", avgGoals:2.45, homeAdv:0.33 },
-    { key:"soccer_argentina_primera_division", name:"Primera División", country:"Argentina", flag:"🇦🇷", avgGoals:2.20, homeAdv:0.35 },
-    { key:"soccer_belgium_first_div", name:"Belgian Pro League", country:"Belgium", flag:"🇧🇪", avgGoals:2.90, homeAdv:0.34 },
-    { key:"soccer_austria_bundesliga", name:"Austrian Bundesliga", country:"Austria", flag:"🇦🇹", avgGoals:3.00, homeAdv:0.35 },
-    { key:"soccer_germany_bundesliga2", name:"2. Bundesliga", country:"Germany", flag:"🇩🇪", avgGoals:2.95, homeAdv:0.34 },
-    { key:"soccer_france_ligue_two", name:"Ligue 2", country:"France", flag:"🇫🇷", avgGoals:2.40, homeAdv:0.34 },
-    { key:"soccer_italy_serie_b", name:"Serie B", country:"Italy", flag:"🇮🇹", avgGoals:2.35, homeAdv:0.33 },
-    { key:"soccer_spain_segunda_division", name:"LaLiga 2", country:"Spain", flag:"🇪🇸", avgGoals:2.40, homeAdv:0.33 },
-    { key:"soccer_mexico_ligamx", name:"Liga MX", country:"Mexico", flag:"🇲🇽", avgGoals:2.70, homeAdv:0.35 },
-    { key:"soccer_conmebol_copa_libertadores", name:"Copa Libertadores", country:"South America", flag:"🌎", avgGoals:2.55, homeAdv:0.35 }
+    { key:"soccer_efl_champ", name:"Championship", country:"England", flag:"🏴", avgGoals:2.55, homeAdv:0.32 }
   ],
 
   PLANS:  { free:{daily:5,scanner:false}, premium:{daily:-1,scanner:true}, admin:{daily:-1,scanner:true} },
-  SHEETS: { users:"Users_v5", logs:"Logs_v5" }
+  SHEETS: { users:"Users_v5", logs:"Logs_v5", oddsCache:"OddsCache_v1" }
 };
 
 // ══════════════════════════════════════════════════════════════════
@@ -223,6 +209,7 @@ function setupDatabase() {
   var ss = getDB_();
   getSheet_(CFG.SHEETS.users);
   getSheet_(CFG.SHEETS.logs);
+  getSheet_(CFG.SHEETS.oddsCache);
   return { initialized:true };
 }
 function getSheet_(name) {
@@ -231,6 +218,7 @@ function getSheet_(name) {
     sh = ss.insertSheet(name);
     if (name === CFG.SHEETS.users) sh.appendRow(["id","email","hash","name","plan","sub_id","created","last_login","disabled"]);
     if (name === CFG.SHEETS.logs)  sh.appendRow(["ts","uid","action","detail"]);
+    if (name === CFG.SHEETS.oddsCache) sh.appendRow(["leagueKey","fetchedAtMs","matchId","matchJson"]);
     sh.getRange("1:1").setFontWeight("bold");
   }
   return sh;
@@ -567,45 +555,105 @@ function buildFallbackVerdict(match) {
 // ══════════════════════════════════════════════════════════════════
 //  COLLECTE MATCHS — toutes ligues, cotes réelles
 // ══════════════════════════════════════════════════════════════════
+function loadOddsSnapshots_() {
+  var sheet=getSheet_(CFG.SHEETS.oddsCache), values=sheet.getDataRange().getValues(), records={};
+  for(var i=1;i<values.length;i++){
+    var key=String(values[i][0]||""), fetchedAt=Number(values[i][1]||0);
+    if(!key||!fetchedAt) continue;
+    if(!records[key]||fetchedAt>records[key].fetchedAt) records[key]={fetchedAt:fetchedAt,matches:[]};
+    if(fetchedAt===records[key].fetchedAt&&values[i][3]){
+      try { records[key].matches.push(JSON.parse(String(values[i][3]))); }
+      catch(e) { Logger.log("Instantané Odds API illisible pour "+key); }
+    }
+  }
+  return {sheet:sheet,records:records};
+}
+
+function saveOddsSnapshots_(sheet, records) {
+  var rows=[["leagueKey","fetchedAtMs","matchId","matchJson"]];
+  Object.keys(records).forEach(function(key){
+    var record=records[key], matches=record.matches||[];
+    if(!matches.length) rows.push([key,record.fetchedAt,"",""]);
+    else matches.forEach(function(match){rows.push([key,record.fetchedAt,match.id||"",JSON.stringify(match)]);});
+  });
+  sheet.clearContents();
+  sheet.getRange(1,1,rows.length,4).setValues(rows);
+}
+
+function addSnapshotMatches_(target, record, stale) {
+  (record.matches||[]).forEach(function(match){
+    var copy=JSON.parse(JSON.stringify(match));
+    copy.oddsFetchedAt=record.fetchedAt;
+    copy.oddsStale=!!stale;
+    target.push(copy);
+  });
+}
+
 function getAllMatches_() {
-  var cKey = "all_matches_v6";
-  var errorKey = "all_matches_empty_error_v1";
+  var cKey = "all_matches_daily8_v1";
+  var errorKey = "all_matches_daily8_error_v1";
   var cache = CacheService.getScriptCache();
   var hit = cache.get(cKey);
   if(hit){ try{ return JSON.parse(hit); }catch(e){} }
   var cachedError=cache.get(errorKey);
   if(cachedError) throw new Error(cachedError);
 
-  var all = [], failures=[];
-  for(var i=0; i<CFG.LEAGUES.length; i++){
-    var lg  = CFG.LEAGUES[i];
-    var raw;
-    try { raw=fetchOdds_(lg.key); }
-    catch(e) { failures.push(lg.name+": "+String(e&&e.message||e)); continue; }
-    for(var j=0; j<raw.length; j++){
-      var enriched = enrichMatch(raw[j], lg);
-      if(enriched) all.push(enriched);
-    }
-  }
+  var lock=LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    hit=cache.get(cKey);
+    if(hit){ try{ return JSON.parse(hit); }catch(e){} }
+    cachedError=cache.get(errorKey);
+    if(cachedError) throw new Error(cachedError);
 
-  if(all.length === 0){
-    var message;
-    if(failures.length===CFG.LEAGUES.length){
-      message="The Odds API a échoué pour toutes les ligues. "+failures.slice(0,3).join(" | ")+(failures.length>3?" | et "+(failures.length-3)+" autres erreurs":"");
-    } else if(failures.length){
-      message="Aucun match à venir dans les "+CFG.WINDOW_H+" prochaines heures. "+failures.length+" ligue(s) ont aussi échoué: "+failures.slice(0,3).join(" | ");
-    } else {
-      message="Aucun match avec cotes 1X2 dans les "+CFG.WINDOW_H+" prochaines heures. Réessaie plus tard.";
+    var snapshots=loadOddsSnapshots_(), records=snapshots.records;
+    var all=[], failures=[], changed=false, now=Date.now();
+    var refreshMs=CFG.ODDS_REFRESH_H*3600*1000;
+    for(var i=0;i<CFG.LEAGUES.length;i++){
+      var lg=CFG.LEAGUES[i], record=records[lg.key];
+      if(record&&now-record.fetchedAt<refreshMs){ addSnapshotMatches_(all,record,false); continue; }
+      try {
+        var raw=fetchOdds_(lg.key), enriched=[];
+        for(var j=0;j<raw.length;j++){
+          var match=enrichMatch(raw[j],lg);
+          if(match) enriched.push(match);
+        }
+        record={fetchedAt:now,matches:enriched};
+        records[lg.key]=record;
+        changed=true;
+        addSnapshotMatches_(all,record,false);
+      } catch(e) {
+        var reason=String(e&&e.message||e);
+        failures.push(lg.name+": "+reason);
+        if(record&&record.matches&&record.matches.length){
+          addSnapshotMatches_(all,record,true);
+          Logger.log("Cotes périmées conservées pour "+lg.name+" (instantané du "+new Date(record.fetchedAt).toISOString()+")");
+        }
+      }
     }
-    try { cache.put(errorKey,message,120); } catch(cacheError) {}
-    throw new Error(message);
-  }
 
-  cache.remove(errorKey);
-  all.sort(function(a,b){ return new Date(a.time)-new Date(b.time); });
-  Logger.log("Total matchs enrichis: "+all.length);
-  try{ cache.put(cKey, JSON.stringify(all), CFG.CACHE_TTL); }catch(e){}
-  return all;
+    if(changed) saveOddsSnapshots_(snapshots.sheet,records);
+    if(all.length===0){
+      var message;
+      if(failures.length===CFG.LEAGUES.length){
+        message="The Odds API a échoué pour toutes les ligues. "+failures.slice(0,3).join(" | ")+(failures.length>3?" | et "+(failures.length-3)+" autres erreurs":"");
+      } else if(failures.length){
+        message="Aucun match à venir dans les "+CFG.WINDOW_H+" prochaines heures. "+failures.slice(0,3).join(" | ");
+      } else {
+        message="Aucun match avec cotes 1X2 dans les "+CFG.WINDOW_H+" prochaines heures. Réessaie après la prochaine actualisation quotidienne.";
+      }
+      try { cache.put(errorKey,message,CFG.ERROR_CACHE_TTL); } catch(cacheError) {}
+      throw new Error(message);
+    }
+
+    cache.remove(errorKey);
+    all.sort(function(a,b){return new Date(a.time)-new Date(b.time);});
+    Logger.log("Total matchs enrichis: "+all.length+"; cache quotidien; erreurs API: "+failures.length);
+    try{cache.put(cKey,JSON.stringify(all),CFG.CACHE_TTL);}catch(e){}
+    return all;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function getLeagueMatches_(leagueKey) {
@@ -912,6 +960,9 @@ function getDashboard_() {
   var all   = getAllMatches_();
   var vbs   = all.filter(function(m){return m.value&&m.value.detected;});
   var traps = all.filter(function(m){return m.trap&&m.trap.detected;});
+  var staleMatches=all.filter(function(m){return m.oddsStale;});
+  var staleLeagues={};
+  staleMatches.forEach(function(m){staleLeagues[m.league]=true;});
   var sbAll = [];
   all.forEach(function(m){ (m.safeBets||[]).forEach(function(sb){ sbAll.push({match:m,bet:sb}); }); });
   sbAll.sort(function(a,b){return b.bet.confidence-a.bet.confidence;});
@@ -927,6 +978,8 @@ function getDashboard_() {
     valueBets:    vbs.length,
     traps:        traps.length,
     safeBetsCount:sbAll.length,
+    staleOddsCount:staleMatches.length,
+    staleOddsLeagues:Object.keys(staleLeagues),
     avgROI:       avgROI,
     topAI:        all.slice().sort(function(a,b){return b.aiScore.score-a.aiScore.score;}).slice(0,6),
     topValueBets: vbs.sort(function(a,b){return b.value.pct-a.value.pct;}).slice(0,8),
