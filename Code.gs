@@ -140,7 +140,26 @@ function getAuthorizedUser_(p) {
     if(String(row[0])===userId&&String(row[1]||"").toLowerCase()===email){
       if(row[8]===true||row[8]==="TRUE") throw new Error("Compte désactivé.");
       if(!safeEqual_(String(p.token),tok(email,String(row[2]||"")))) throw new Error("Session invalide. Reconnectez-vous.");
-      return {id:userId,email:email,plan:row[4]||"free"};
+      var plan=row[4]||"free";
+      if(plan==="premium"){
+        var subId=String(row[5]||"");
+        if(!subId) plan="free";
+        else {
+          var cache=CacheService.getScriptCache(), cacheKey="paypal_active_"+md5(subId), state=cache.get(cacheKey);
+          if(state==="active") plan="premium";
+          else if(state==="inactive") plan="free";
+          else {
+            var status=verifyPaypalSubscription_(subId,email);
+            if(status.active){cache.put(cacheKey,"active",300);plan="premium";}
+            else {
+              cache.put(cacheKey,"inactive",300);
+              getSheet_(CFG.SHEETS.users).getRange(i+1,5).setValue("free");
+              plan="free";
+            }
+          }
+        }
+      }
+      return {id:userId,email:email,plan:plan};
     }
   }
   throw new Error("Compte introuvable. Reconnectez-vous.");
@@ -357,25 +376,25 @@ function verifyPaypalSubscription_(subId, email) {
   var planId=getSecret_("PAYPAL_PLAN_ID");
   if(!planId||/YOUR_|CHANGE_ME/i.test(planId)) throw new Error("PAYPAL_PLAN_ID n'est pas configuré.");
   var safeId=String(subId||"");
-  if(!/^[A-Za-z0-9-]{5,80}$/.test(safeId)) throw new Error("Identifiant d'abonnement invalide.");
+  if(!/^[A-Za-z0-9-]{5,80}$/.test(safeId)) return {active:false,status:"INVALID_ID"};
   var response=UrlFetchApp.fetch(paypalApiBase_()+"/v1/billing/subscriptions/"+encodeURIComponent(safeId),{
     method:"get",
     headers:{Authorization:"Bearer "+paypalAccessToken_(),Accept:"application/json"},
     muteHttpExceptions:true
   });
-  if(response.getResponseCode()!==200) throw new Error("Abonnement PayPal introuvable ou non vérifiable.");
+  var code=response.getResponseCode();
+  if(code===404||code===422) return {active:false,status:"NOT_FOUND"};
+  if(code!==200) throw new Error("Vérification PayPal temporairement indisponible (HTTP "+code+").");
   var sub=JSON.parse(response.getContentText()), subscriber=sub.subscriber||{};
-  if(sub.status!=="ACTIVE"||sub.plan_id!==planId)
-    throw new Error("L'abonnement PayPal n'est pas actif sur le forfait attendu.");
-  if(!subscriber.email_address||subscriber.email_address.toLowerCase()!==String(email||"").toLowerCase())
-    throw new Error("L'adresse du compte ne correspond pas à l'acheteur PayPal.");
-  return sub;
+  var emailMatches=!!subscriber.email_address&&subscriber.email_address.toLowerCase()===String(email||"").toLowerCase();
+  var active=sub.status==="ACTIVE"&&sub.plan_id===planId&&emailMatches;
+  return {active:active,status:sub.status||"UNKNOWN"};
 }
-
 function paypalSuccess_(subId, email) {
   if(!subId||!email) throw new Error("Données invalides");
   email=String(email).trim().toLowerCase();
   var verified=verifyPaypalSubscription_(subId,email);
+  if(!verified.active) throw new Error("L'abonnement PayPal n'est pas actif, sur le forfait attendu ou associé à cette adresse.");
   var sh=getSheet_(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++){
     if(String(rows[i][1]||"").toLowerCase()===email){
