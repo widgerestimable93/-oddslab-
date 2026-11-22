@@ -242,7 +242,7 @@ function registerUser(email, password, name) {
   email=String(email).trim().toLowerCase();
   password=String(password);
   name=String(name||email.split("@")[0]).trim().slice(0,80);
-  if(email.length>254||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new Error("Adresse email invalide");
+  if(email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Adresse email invalide");
   if(password.length<10) throw new Error("Mot de passe trop court (10 caractères minimum)");
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(5000)) throw new Error("Service occupé, réessayez.");
