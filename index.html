@@ -1477,8 +1477,15 @@ function hasAppsScriptBridge(){
   return typeof google!=="undefined"&&google.script&&google.script.run;
 }
 function redirectToAppsScript(){
-  if(!hasAppsScriptBridge()&&/\.github\.io$/i.test(window.location.hostname)){
-    window.location.replace(GAS_URL);return true;
+  // GitHub Pages is the installable PWA shell. Keep its origin and load the
+  // Apps Script app in an iframe so google.script.run works without CORS fetches.
+  if(!hasAppsScriptBridge()&&/\\.github\\.io$/i.test(window.location.hostname)){
+    document.title="OddsLab Intelligence";
+    document.body.innerHTML='<main id="pwaShell" style="position:fixed;inset:0;background:#040608;color:#dce8f5;font:14px Arial,sans-serif"><div id="pwaLoading" style="position:absolute;z-index:2;inset:0;display:grid;place-content:center;text-align:center;background:#040608"><div style="font-size:24px;margin-bottom:12px">⚡ OddsLab</div><div>Connexion à la plateforme…</div></div><iframe id="oddsAppFrame" title="OddsLab Intelligence" src="'+GAS_URL+'" style="display:block;width:100%;height:100%;border:0" allow="clipboard-read; clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe></main>';
+    var frame=document.getElementById("oddsAppFrame");
+    var loading=document.getElementById("pwaLoading");
+    frame.addEventListener("load",function(){loading.style.display="none";});
+    return true;
   }
   return false;
 }
