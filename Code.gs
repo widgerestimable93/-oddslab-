@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  OddsLab ANALYTICS — Code.gs v6.0                               ║
+// ║  OddsLab ANALYTICS — Code.gs v6.1                               ║
 // ║  The Odds API (cotes réelles) · Gemini AI · Zéro démo           ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
@@ -8,13 +8,13 @@ var CFG = {
   ODDS_KEY: "",   // The Odds API
   ODDS_BASE:   "https://api.the-odds-api.com/v4",
 
-  GEMINI_KEY: "",               // ← remplacer
+  GEMINI_KEY: "",               // facultative; utiliser la propriété de script GEMINI_KEY
   GEMINI_URL:  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
 
   // ── App ─────────────────────────────────────────────────────────
   VER:         "6.1.0",
   CACHE_TTL:   900,    // 15 min pour les cotes
-  CACHE_AI:    3600,   // 30 min pour l'analyse Gemini
+  CACHE_AI:    3600,   // 60 min pour l'analyse Gemini
   REGION:      "eu",
   ADMIN_EMAIL: "",
   ADMIN_PASS: "",

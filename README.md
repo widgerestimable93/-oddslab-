@@ -29,7 +29,7 @@ Ne collez jamais une clé API, un mot de passe ou un fichier de signature dans l
 
 Le dépôt est configuré pour publier depuis la branche `main`, à la racine. Après la publication, ouvrez la page GitHub Pages sous Chrome, puis choisissez **Installer OddsLab** dans le menu du navigateur. Si l’installation n’est pas proposée, vérifiez que le manifeste et le service worker sont accessibles et rechargez après la publication.
 
-Les icônes, le manifeste et le service worker sont à la racine : `icon.svg`, `manifest.webmanifest` et `sw.js`.
+Les icônes PWA PNG 192×192 et 512×512, l’icône SVG, le manifeste et le service worker sont à la racine : `icon-192.png`, `icon-512.png`, `icon.svg`, `manifest.webmanifest` et `sw.js`.
 
 ## Clés exposées à révoquer
 
