@@ -176,40 +176,86 @@ function getSecret_(name) {
   return PropertiesService.getScriptProperties().getProperty(name) || "";
 }
 
+function authFailKey_(email) { return "auth_fail_"+md5(String(email||"").toLowerCase()); }
+function checkAuthRate_(email) {
+  var count=Number(CacheService.getScriptCache().get(authFailKey_(email))||0);
+  if(count>=8) throw new Error("Trop de tentatives. Réessayez dans 15 minutes.");
+}
+function recordAuthFailure_(email) {
+  var cache=CacheService.getScriptCache(), key=authFailKey_(email);
+  cache.put(key,String(Number(cache.get(key)||0)+1),900);
+}
+function clearAuthFailures_(email) { CacheService.getScriptCache().remove(authFailKey_(email)); }
+function safeEqual_(a,b) {
+  a=String(a||"");b=String(b||"");
+  var diff=a.length^b.length, n=Math.max(a.length,b.length);
+  for(var i=0;i<n;i++) diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);
+  return diff===0;
+}
+function digestHex_(bytes) {
+  return bytes.map(function(b){return ("0"+(b<0?b+256:b).toString(16)).slice(-2);}).join("");
+}
+function makePasswordHash_(password) {
+  var salt=Utilities.getUuid().replace(/-/g,"");
+  return "s256$"+salt+"$"+digestHex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,salt+":"+password));
+}
+function verifyPassword_(password, stored) {
+  stored=String(stored||"");
+  if(stored.indexOf("s256$")===0){
+    var p=stored.split("$");
+    return p.length===3&&safeEqual_(p[2],digestHex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,p[1]+":"+password)));
+  }
+  return safeEqual_(stored,md5(password));
+}
+
 function loginUser(email, password) {
   if(!email||!password) throw new Error("Champs requis");
-  email = email.toLowerCase().trim();
-  var adminEmail=getSecret_("ADMIN_EMAIL"), adminPass=getSecret_("ADMIN_PASS");
-  if(adminEmail&&adminPass&&email===adminEmail.toLowerCase()&&password===adminPass)
-    return { user:{id:"admin",email:adminEmail,name:"Admin",plan:"admin"}, token:tok(email,md5(password)) };
-  var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues(), h=md5(password);
+  email=String(email).trim().toLowerCase();
+  checkAuthRate_(email);
+  var adminEmail=getSecret_("ADMIN_EMAIL").trim().toLowerCase(), adminPass=getSecret_("ADMIN_PASS");
+  if(adminEmail&&adminPass&&email===adminEmail&&safeEqual_(password,adminPass)){
+    clearAuthFailures_(email);
+    return {user:{id:"admin",email:adminEmail,name:"Admin",plan:"admin"},token:tok(email,md5(password))};
+  }
+  var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
   for(var i=1;i<rows.length;i++){
-    var r=rows[i];
-    if(r[1].toString().toLowerCase()===email && r[2]===h){
-      if(r[8]===true||r[8]==="TRUE") throw new Error("Compte désactivé");
+    var row=rows[i], rowEmail=String(row[1]||"").trim().toLowerCase();
+    if(rowEmail===email&&verifyPassword_(password,row[2])){
+      if(row[8]===true||row[8]==="TRUE") throw new Error("Compte désactivé");
+      var currentHash=String(row[2]||"");
+      if(currentHash.indexOf("s256$")!==0){
+        currentHash=makePasswordHash_(password);
+        sh.getRange(i+1,3).setValue(currentHash);
+      }
       sh.getRange(i+1,8).setValue(new Date().toISOString());
-      slog(r[0],"login","");
-      return { user:{id:r[0],email:r[1],name:r[3],plan:r[4]||"free"}, token:tok(email,h) };
+      clearAuthFailures_(email);
+      slog(row[0],"login","");
+      return {user:{id:row[0],email:row[1],name:row[3],plan:row[4]||"free"},token:tok(email,currentHash)};
     }
   }
+  recordAuthFailure_(email);
   throw new Error("Email ou mot de passe incorrect");
 }
 
 function registerUser(email, password, name) {
-  if(!email||!password) throw new Error("Champs requis");
-  if(password.length<6) throw new Error("Mot de passe trop court (6 min)");
-  email = email.toLowerCase().trim();
-  var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues(), h=md5(password), id=uid(), now=new Date().toISOString();
-  for(var i=1;i<rows.length;i++) if(rows[i][1].toString().toLowerCase()===email) throw new Error("Email déjà utilisé");
-  sh.appendRow([id,email,h,name||email.split("@")[0],"free","",now,now,false]);
-  slog(id,"register","");
-  return { user:{id:id,email:email,name:name||email.split("@")[0],plan:"free"}, token:tok(email,h) };
-}
-
-function getPublicConfig_() {
-  var clientId=getSecret_("PAYPAL_CLIENT_ID"), planId=getSecret_("PAYPAL_PLAN_ID");
-  if(!clientId||!planId||/YOUR_|CHANGE_ME/i.test(clientId+planId)) return {paypalEnabled:false};
-  return {paypalEnabled:true,paypalClientId:clientId,paypalPlanId:planId};
+  if(!email||!password) throw new Error("Email et mot de passe requis");
+  email=String(email).trim().toLowerCase();
+  password=String(password);
+  name=String(name||email.split("@")[0]).trim().slice(0,80);
+  if(email.length>254||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new Error("Adresse email invalide");
+  if(password.length<10) throw new Error("Mot de passe trop court (10 caractères minimum)");
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000)) throw new Error("Service occupé, réessayez.");
+  try {
+    var sh=getSheet(CFG.SHEETS.users), rows=sh.getDataRange().getValues();
+    for(var i=1;i<rows.length;i++) if(String(rows[i][1]||"").trim().toLowerCase()===email) throw new Error("Email déjà utilisé");
+    var id=uid(), now=new Date().toISOString(), hash=makePasswordHash_(password);
+    sh.appendRow([id,email,hash,name,"free","",now,now,false]);
+    slog(id,"register","");
+    return {user:{id:id,email:email,name:name,plan:"free"},token:tok(email,hash)};
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function paypalApiBase_() {
